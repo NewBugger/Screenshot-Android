@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020.
+ * Copyright (c) 2018-2020 : NewBugger (https://github.com/NewBugger)
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
