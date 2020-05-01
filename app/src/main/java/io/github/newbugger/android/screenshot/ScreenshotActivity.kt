@@ -171,12 +171,9 @@ class ScreenshotActivity : Activity() {
             val image: Image = reader.acquireLatestImage()
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
-            val pixelStride: Int = planes[0].pixelStride
-            val rowStride: Int = planes[0].rowStride
-            val rowPadding: Int = rowStride - pixelStride * onViewWidth
             // logcat:: W/roid.screensho: Core platform API violation: Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
             val bitmap = Bitmap.createBitmap(  // create bitmap
-                onViewWidth + rowPadding / pixelStride,
+                onViewWidth,
                 onViewHeight,
                 Bitmap.Config.ARGB_8888
             )
