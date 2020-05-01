@@ -100,16 +100,16 @@ class ScreenshotActivity : Activity() {
         }.start()
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     private fun createViewValues() {
         mWindowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        // Android 10 cannot install app include Android 11 apis
+        /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // https://developer.android.com/reference/android/view/Display#getSize(android.graphics.Point)
             // https://developer.android.com/reference/android/view/WindowManager#getCurrentWindowMetrics()
             // https://developer.android.com/reference/android/view/WindowMetrics#getSize()
             mViewWidth = mWindowManager.currentWindowMetrics.size.width
             mViewHeight = mWindowManager.currentWindowMetrics.size.height
-        } else {
+        } else { */
             // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
             // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
             val mDisplay = mWindowManager.defaultDisplay
@@ -117,7 +117,7 @@ class ScreenshotActivity : Activity() {
             mDisplay.getRealSize(size)
             mViewWidth = size.x
             mViewHeight = size.y
-        }
+        /* } */
         mDensity = resources.configuration.densityDpi  // https://developer.android.com/reference/android/content/res/Configuration#densityDpi
         fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
     }
@@ -220,7 +220,6 @@ class ScreenshotActivity : Activity() {
     }
 */
 
-    @RequiresApi(Build.VERSION_CODES.R)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == projectionRequestCode && resultCode == RESULT_OK && data != null) {  // if yes, call MediaFunction to capture the current screen display
