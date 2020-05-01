@@ -30,7 +30,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.Display
-import android.view.OrientationEventListener
 import android.widget.Toast
 // import com.muddzdev.quickshot.QuickShot
 import java.io.File
@@ -57,7 +56,6 @@ class ScreenshotActivity : Activity() {
     private lateinit var mDisplay: Display
     private lateinit var mImageReader: ImageReader
     private lateinit var mHandler: Handler
-    private lateinit var mOrientationChangeCallback: OrientationChangeCallback
 
     private var mRotation by Delegates.notNull<Int>()  // compare from OrientationChangeCallback
     private var mViewWidth by Delegates.notNull<Int>()
@@ -140,8 +138,6 @@ class ScreenshotActivity : Activity() {
     }
 
     private fun createOverListener() {
-        mOrientationChangeCallback = OrientationChangeCallback(this, WeakReference(this))  // register orientation change callback
-        if (mOrientationChangeCallback.canDetectOrientation()) mOrientationChangeCallback.enable()
         mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
     }
 
@@ -186,24 +182,11 @@ class ScreenshotActivity : Activity() {
         }
     }
 
-    private class OrientationChangeCallback internal constructor(context: Context, private val outerClass: WeakReference<ScreenshotActivity>) : OrientationEventListener(context) {
-        override fun onOrientationChanged(orientation: Int) {
-            val rotation: Int = outerClass.get()!!.mDisplay.rotation  // if NEW rotation state
-            if (rotation != outerClass.get()!!.mRotation) {
-                outerClass.get()!!.mRotation = rotation
-                outerClass.get()!!.mVirtualDisplay.release()  // clean up the old display
-                outerClass.get()!!.mImageReader.setOnImageAvailableListener(null, null)
-                outerClass.get()!!.createVirtualDisplay()  // recreate a new display
-            }
-        }
-    }
-
     private class MediaProjectionStopCallback(private val outerClass: WeakReference<ScreenshotActivity>) : MediaProjection.Callback() {
         override fun onStop() {
             outerClass.get()!!.mHandler.post {
                 outerClass.get()!!.mVirtualDisplay.release()
                 outerClass.get()!!.mImageReader.setOnImageAvailableListener(null, null)
-                outerClass.get()!!.mOrientationChangeCallback.disable()
                 outerClass.get()!!.mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
             }
         }
