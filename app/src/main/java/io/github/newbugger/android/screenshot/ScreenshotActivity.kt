@@ -237,7 +237,7 @@ class ScreenshotActivity : Activity() {
                 createVirtualDisplay()  // create virtual display depending on device width / height
                 createOverListener()
                 Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
-            }, 7000)  // 5000ms == 5s
+            }, 4000)  // 5000ms == 5s
         } else {
             Toast.makeText(this, "Capture behavior canceled.", Toast.LENGTH_LONG).show()
         }
