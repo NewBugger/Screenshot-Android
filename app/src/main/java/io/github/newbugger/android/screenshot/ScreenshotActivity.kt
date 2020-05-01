@@ -23,7 +23,7 @@ import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
-import android.os.Build
+// import android.os.Build
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
@@ -32,7 +32,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.annotation.RequiresApi
+// import androidx.annotation.RequiresApi
 // import com.muddzdev.quickshot.QuickShot
 import java.io.File
 import java.io.FileOutputStream
