@@ -244,9 +244,9 @@ class ScreenshotActivity : Activity() {
             createViewValues()
             mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
                 createVirtualDisplay()  // create virtual display depending on device width / height
-            }, 5000)  // 5000ms == 5s
-            createOverListener()
-            Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
+                createOverListener()
+                Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
+            }, 7000)  // 5000ms == 5s
         } else {
             Toast.makeText(this, "Capture behavior canceled.", Toast.LENGTH_LONG).show()
         }
