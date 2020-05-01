@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Screenshot</string>
+    <string name="main_text">using notification intent to take Screenshot.</string>
+    <string name="notification_button">start</string>
+</resources>
