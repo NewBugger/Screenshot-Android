@@ -39,7 +39,6 @@ import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-// import java.util.concurrent.TimeUnit
 import kotlin.properties.Delegates
 
 
@@ -106,7 +105,7 @@ class ScreenshotActivity : Activity() {
     private fun createViewValues() {
         mDisplayMetrics = resources.displayMetrics
         mDisplay = windowManager.defaultDisplay
-        mDisplay.getMetrics(mDisplayMetrics)  // https://stackoverflow.com/a/60378460
+        // mDisplay.getMetrics(mDisplayMetrics)  // https://stackoverflow.com/a/60378460
         // mViewWidth = mDisplayMetrics.widthPixels  // unexpected get wrong value
         // mViewHeight = mDisplayMetrics.heightPixels  // unexpected get wrong value
         mViewWidth = 1080
@@ -233,7 +232,7 @@ class ScreenshotActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == projectionRequestCode && resultCode == RESULT_OK && data != null) {  // if yes, call MediaFunction to capture the current screen display
-            // TimeUnit.SECONDS.sleep(5L)  // wait 5s for mine prepared screen // https://stackoverflow.com/a/51723531
+            // TimeUnit.SECONDS.sleep(5L)  // its freezes the UI
             // just write it the foreground, don't need it to run Media Projection
             /* if (screenshotService == null) {
                 Toast.makeText(this, "wait for screenshotService binder ..", Toast.LENGTH_LONG).show()
@@ -243,7 +242,9 @@ class ScreenshotActivity : Activity() {
             mMediaProjection = screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data) */
             mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
             createViewValues()
-            createVirtualDisplay()  // create virtual display depending on device width / height
+            mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
+                createVirtualDisplay()  // create virtual display depending on device width / height
+            }, 5000)  // 5000ms == 5s
             createOverListener()
             Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
         } else {
