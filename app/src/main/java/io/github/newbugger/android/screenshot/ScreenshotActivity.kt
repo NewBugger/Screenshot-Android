@@ -16,21 +16,23 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
+import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.DisplayMetrics
-import android.view.Display
+import android.view.WindowManager
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 // import com.muddzdev.quickshot.QuickShot
 import java.io.File
 import java.io.FileOutputStream
@@ -52,12 +54,10 @@ class ScreenshotActivity : Activity() {
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
     private lateinit var mVirtualDisplay: VirtualDisplay
-    private lateinit var mDisplayMetrics: DisplayMetrics
-    private lateinit var mDisplay: Display
+    private lateinit var mWindowManager: WindowManager
     private lateinit var mImageReader: ImageReader
     private lateinit var mHandler: Handler
 
-    private var mRotation by Delegates.notNull<Int>()  // compare from OrientationChangeCallback
     private var mViewWidth by Delegates.notNull<Int>()
     private var mViewHeight by Delegates.notNull<Int>()
     private var mDensity by Delegates.notNull<Int>()
@@ -94,23 +94,31 @@ class ScreenshotActivity : Activity() {
         object : Thread() {  // start capture handling thread
             override fun run() {
                 Looper.prepare()
-                mHandler = Handler()
+                mHandler = Looper.myLooper()?.let { Handler(it) }!!  // https://developer.android.com/reference/android/os/Handler#Handler()
                 Looper.loop()
             }
         }.start()
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun createViewValues() {
-        mDisplayMetrics = resources.displayMetrics
-        mDisplay = windowManager.defaultDisplay
-        // mDisplay.getMetrics(mDisplayMetrics)  // https://stackoverflow.com/a/60378460
-        // mViewWidth = mDisplayMetrics.widthPixels  // unexpected get wrong value
-        // mViewHeight = mDisplayMetrics.heightPixels  // unexpected get wrong value
-        mViewWidth = 1080
-        mViewHeight = 1920
-        mDensity = mDisplayMetrics.densityDpi
-        mRotation = mDisplay.rotation  // write down the current value
-        // fileLocation = getLocation()
+        mWindowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // https://developer.android.com/reference/android/view/Display#getSize(android.graphics.Point)
+            // https://developer.android.com/reference/android/view/WindowManager#getCurrentWindowMetrics()
+            // https://developer.android.com/reference/android/view/WindowMetrics#getSize()
+            mViewWidth = mWindowManager.currentWindowMetrics.size.width
+            mViewHeight = mWindowManager.currentWindowMetrics.size.height
+        } else {
+            // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
+            // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
+            val mDisplay = mWindowManager.defaultDisplay
+            val size = Point()
+            mDisplay.getRealSize(size)
+            mViewWidth = size.x
+            mViewHeight = size.y
+        }
+        mDensity = resources.configuration.densityDpi  // https://developer.android.com/reference/android/content/res/Configuration#densityDpi
         fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
     }
 
@@ -212,6 +220,7 @@ class ScreenshotActivity : Activity() {
     }
 */
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == projectionRequestCode && resultCode == RESULT_OK && data != null) {  // if yes, call MediaFunction to capture the current screen display
@@ -245,7 +254,7 @@ class ScreenshotActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mMediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        mMediaProjectionManager = applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         createObjectThread()
         startProjection() // default start capture, so opener is needed
     }
