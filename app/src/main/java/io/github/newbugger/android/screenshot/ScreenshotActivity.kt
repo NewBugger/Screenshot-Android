@@ -30,6 +30,7 @@ import android.os.Environment.getExternalStoragePublicDirectory
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.widget.Toast
 // import androidx.annotation.RequiresApi
@@ -54,6 +55,7 @@ class ScreenshotActivity : Activity() {
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
     private lateinit var mVirtualDisplay: VirtualDisplay
+    private lateinit var mDisplayMetrics: DisplayMetrics
     private lateinit var mWindowManager: WindowManager
     private lateinit var mImageReader: ImageReader
     private lateinit var mHandler: Handler
@@ -61,6 +63,7 @@ class ScreenshotActivity : Activity() {
     private var mViewWidth by Delegates.notNull<Int>()
     private var mViewHeight by Delegates.notNull<Int>()
     private var mDensity by Delegates.notNull<Int>()
+    private var mImages by Delegates.notNull<Int>()
 
     // Service Binder
     private lateinit var screenshotService: ScreenshotService
@@ -94,7 +97,12 @@ class ScreenshotActivity : Activity() {
         object : Thread() {  // start capture handling thread
             override fun run() {
                 Looper.prepare()
-                mHandler = Looper.myLooper()?.let { Handler(it) }!!  // https://developer.android.com/reference/android/os/Handler#Handler()
+                /* mHandler = if (Looper.myLooper() != null) {
+                    Handler(Looper.myLooper()!!)  // https://developer.android.com/reference/android/os/Handler#Handler()
+                } else {
+                    Handler()  // deprecated in api 30.
+                } */
+                mHandler = Handler()
                 Looper.loop()
             }
         }.start()
@@ -102,6 +110,7 @@ class ScreenshotActivity : Activity() {
 
     private fun createViewValues() {
         mWindowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        mDisplayMetrics = applicationContext.resources.displayMetrics
         // Android 10 cannot install app include Android 11 apis
         /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // https://developer.android.com/reference/android/view/Display#getSize(android.graphics.Point)
@@ -118,8 +127,9 @@ class ScreenshotActivity : Activity() {
             mViewWidth = size.x
             mViewHeight = size.y
         /* } */
-        mDensity = resources.configuration.densityDpi  // https://developer.android.com/reference/android/content/res/Configuration#densityDpi
+        mDensity = mDisplayMetrics.densityDpi
         fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
+        mImages = 0
     }
 
     private fun createVirtualDisplay() {
@@ -127,10 +137,10 @@ class ScreenshotActivity : Activity() {
             mViewWidth,
             mViewHeight,
             PixelFormat.RGBA_8888,
-            2
+            1
         )
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-            "capture_screen",  // SCREEN_CAP_NAME
+            "capture_screen",
             mViewWidth,
             mViewHeight,
             mDensity,
@@ -164,23 +174,30 @@ class ScreenshotActivity : Activity() {
 
     private class ImageAvailableListener(private val outerClass: WeakReference<ScreenshotActivity>) : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
+            outerClass.get()!!.mImages = outerClass.get()!!.mImages++  // plus one
+            if (outerClass.get()!!.mImages > 1) return  // generate one image only
             val onViewWidth = outerClass.get()!!.mViewWidth
             val onViewHeight = outerClass.get()!!.mViewHeight
             val onFileLocation = outerClass.get()!!.fileLocation
             val onFileName = outerClass.get()!!.getFiles()
-            val image: Image = reader.acquireLatestImage()
+            val onFileTarget = File(onFileLocation + File.separator  + onFileName +".png")
+            val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
             // logcat:: W/roid.screensho: Core platform API violation: Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
-            val bitmap = Bitmap.createBitmap(  // create bitmap
+            val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
+                outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
                 onViewWidth,
                 onViewHeight,
-                Bitmap.Config.ARGB_8888
+                Bitmap.Config.ARGB_8888,
+                false
             )
+            buffer.rewind()
             bitmap.copyPixelsFromBuffer(buffer)
-            val fos = FileOutputStream(onFileLocation + File.separator  + onFileName +".png")  // write bitmap to a file
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+            val fos = FileOutputStream(onFileTarget)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
             fos.close()
+            buffer.clear()
             bitmap.recycle()
             image.close()
             outerClass.get()!!.stopProjection()
@@ -234,7 +251,7 @@ class ScreenshotActivity : Activity() {
                 createVirtualDisplay()  // create virtual display depending on device width / height
                 createOverListener()
                 Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
-            }, 4000)  // 5000ms == 5s
+            }, 3000)  // 5000ms == 5s
         } else {
             Toast.makeText(this, "Capture behavior canceled.", Toast.LENGTH_LONG).show()
         }
