@@ -11,6 +11,7 @@ package io.github.newbugger.android.screenshot
 
 import android.app.Activity
 import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
@@ -23,13 +24,15 @@ import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
-// import android.os.Build
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.widget.Toast
@@ -51,6 +54,7 @@ class ScreenshotActivity : Activity() {
     // private val REQUEST_ON = true
 
     private lateinit var fileLocation: String
+    private lateinit var fileName: String
 
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
@@ -63,16 +67,16 @@ class ScreenshotActivity : Activity() {
     private var mViewWidth by Delegates.notNull<Int>()
     private var mViewHeight by Delegates.notNull<Int>()
     private var mDensity by Delegates.notNull<Int>()
-    private var mImages by Delegates.notNull<Int>()
 
     // Service Binder
     private lateinit var screenshotService: ScreenshotService
     private var screenshotBound: Boolean = false
 
     // https://stackoverflow.com/a/37486214
-    private fun getFiles(): String {  // regenerate filename
+    private fun getFiles() {  // regenerate filename
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
-        return "Screenshot-$fileDate"
+        fileName = "Screenshot-$fileDate.png"
+        fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
     }
 
     /* private fun getLocation(): String {
@@ -128,8 +132,7 @@ class ScreenshotActivity : Activity() {
             mViewHeight = size.y
         /* } */
         mDensity = mDisplayMetrics.densityDpi
-        fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
-        mImages = 0
+        getFiles()
     }
 
     private fun createVirtualDisplay() {
@@ -174,13 +177,11 @@ class ScreenshotActivity : Activity() {
 
     private class ImageAvailableListener(private val outerClass: WeakReference<ScreenshotActivity>) : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
-            outerClass.get()!!.mImages = outerClass.get()!!.mImages++  // plus one
-            if (outerClass.get()!!.mImages > 1) return  // generate one image only
             val onViewWidth = outerClass.get()!!.mViewWidth
             val onViewHeight = outerClass.get()!!.mViewHeight
             val onFileLocation = outerClass.get()!!.fileLocation
-            val onFileName = outerClass.get()!!.getFiles()
-            val onFileTarget = File(onFileLocation + File.separator  + onFileName +".png")
+            val onFileName  = outerClass.get()!!.fileName
+            val onFileTarget = File(onFileLocation + File.separator  + onFileName)
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
@@ -225,6 +226,25 @@ class ScreenshotActivity : Activity() {
         }
     }
 
+    private fun createFileBroadcast() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // https://stackoverflow.com/a/59196277
+            // https://developer.android.com/reference/android/content/ContentResolver#insert(android.net.Uri,%20android.content.ContentValues)
+            val values = ContentValues(3)
+            values.put(MediaStore.Images.Media.TITLE, fileName)
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES.toString() + File.separator + "Screenshot")
+            values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        } else {
+            // https://developer.android.com/training/camera/photobasics#TaskGallery
+            Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
+                val file = File(fileLocation + File.separator  + fileName)
+                mediaScanIntent.data = Uri.fromFile(file)
+                sendBroadcast(mediaScanIntent)
+            }
+        }
+    }
+
 /*    override fun onQuickShotSuccess(path: String) {
         Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
     }
@@ -248,12 +268,11 @@ class ScreenshotActivity : Activity() {
             mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
             createViewValues()
             mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
-                createVirtualDisplay()  // create virtual display depending on device width / height
+                createVirtualDisplay()
                 createOverListener()
+                createFileBroadcast()
                 Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
             }, 3000)  // 5000ms == 5s
-        } else {
-            Toast.makeText(this, "Capture behavior canceled.", Toast.LENGTH_LONG).show()
         }
         /* if (requestCode == documentRequestCode && resultCode == RESULT_OK && data != null) {
             val directoryUri = data.data ?: return
