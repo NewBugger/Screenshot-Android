@@ -63,6 +63,7 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
         startActivityForResult(intent, documentRequestCode)
     }
 
+    // TODO: add option for SAF or Storage root
     private fun setFiles() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             setDocumentAccess()
