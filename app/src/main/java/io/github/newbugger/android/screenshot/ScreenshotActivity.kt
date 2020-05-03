@@ -58,7 +58,7 @@ class ScreenshotActivity : Activity() {
 
     private lateinit var fileLocation: String
     private lateinit var fileName: String
-    private lateinit var fileOutputStream: OutputStream
+    private lateinit var fileNewDocument: Uri
 
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
@@ -78,15 +78,15 @@ class ScreenshotActivity : Activity() {
 
     // https://stackoverflow.com/a/37486214
     private fun getFiles() {  // regenerate filename
-        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm")).toString()
+        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val preferences = PreferenceManager.getDefaultSharedPreferences(this)
             val dir = preferences.getString("directory", null).toString()
             val uri = Uri.parse(dir)
             val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, uri)!!
-            val newDocumentFile: DocumentFile = documentFile.createFile("image/png", fileName)!!
-            fileOutputStream = contentResolver.openOutputStream(newDocumentFile.uri, "rwt")!!
+            val newDocumentFile = documentFile.createFile("image/png", fileName)!!
+            fileNewDocument = newDocumentFile.uri
         } else {
             fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
         }
@@ -165,13 +165,13 @@ class ScreenshotActivity : Activity() {
             null,
             mHandler
         )
+    }
+
+    private fun createOverListener() {
         mImageReader.setOnImageAvailableListener(
             ImageAvailableListener(WeakReference(this)),
             mHandler
         )
-    }
-
-    private fun createOverListener() {
         mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
     }
 
@@ -208,7 +208,7 @@ class ScreenshotActivity : Activity() {
             buffer.clear()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // https://stackoverflow.com/a/49998139
-                val fileOutputStream = outerClass.get()!!.fileOutputStream
+                val fileOutputStream: OutputStream = outerClass.get()!!.contentResolver.openOutputStream(outerClass.get()!!.fileNewDocument, "rwt")!!
                 val byteArrayOutputStream = ByteArrayOutputStream()
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
                 val byteArray = byteArrayOutputStream.toByteArray()
@@ -224,6 +224,7 @@ class ScreenshotActivity : Activity() {
             }
             bitmap.recycle()
             image.close()
+            outerClass.get()!!.stopProjection()
         }
     }
 
@@ -295,7 +296,6 @@ class ScreenshotActivity : Activity() {
                         // https://stackoverflow.com/a/54352394
                         createVirtualDisplay()
                         createOverListener()
-                        stopProjection()
                         createFileBroadcast()
                         Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
                     }, 3000)  // 5000ms == 5s}
