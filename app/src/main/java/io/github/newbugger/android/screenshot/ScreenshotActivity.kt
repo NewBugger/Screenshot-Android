@@ -16,7 +16,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.Bitmap
-import android.graphics.PixelFormat
+import android.graphics.PixelFormat.RGBA_8888
 import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -38,12 +38,9 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
-// import androidx.annotation.RequiresApi
-// import com.muddzdev.quickshot.QuickShot
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
@@ -76,11 +73,15 @@ class ScreenshotActivity : Activity() {
     private lateinit var screenshotService: ScreenshotService
     private var screenshotBound: Boolean = false
 
+    private fun getSDKLimit(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+    }
+
     // https://stackoverflow.com/a/37486214
     private fun getFiles() {  // regenerate filename
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (getSDKLimit()) {
             val preferences = PreferenceManager.getDefaultSharedPreferences(this)
             val dir = preferences.getString("directory", null).toString()
             val uri = Uri.parse(dir)
@@ -134,7 +135,7 @@ class ScreenshotActivity : Activity() {
         mImageReader = ImageReader.newInstance(
             mViewWidth,
             mViewHeight,
-            PixelFormat.RGBA_8888,
+            RGBA_8888,
             1
         )
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(
@@ -192,9 +193,7 @@ class ScreenshotActivity : Activity() {
                 false
             )
             bitmap.copyPixelsFromBuffer(buffer)
-            buffer.rewind()
-            buffer.clear()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (outerClass.get()!!.getSDKLimit()) {
                 // https://stackoverflow.com/a/49998139
                 // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
                 val fileOutputStream: OutputStream = outerClass.get()!!.contentResolver.openOutputStream(outerClass.get()!!.fileNewDocument, "rw")!!
@@ -236,7 +235,7 @@ class ScreenshotActivity : Activity() {
     }
 
     private fun createFileBroadcast() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (getSDKLimit()) {
             // https://stackoverflow.com/a/59196277
             // https://developer.android.com/reference/android/content/ContentResolver#insert(android.net.Uri,%20android.content.ContentValues)
             val values = ContentValues(3)
@@ -254,15 +253,6 @@ class ScreenshotActivity : Activity() {
             }
         }
     }
-
-/*    override fun onQuickShotSuccess(path: String) {
-        Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
-    }
-
-    override fun onQuickShotFailed(path: String) {
-        Toast.makeText(this, "Screenshot failed, please check.", Toast.LENGTH_LONG).show()
-    }
-*/
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
