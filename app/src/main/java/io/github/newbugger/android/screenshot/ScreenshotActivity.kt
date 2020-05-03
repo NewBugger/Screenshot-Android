@@ -36,10 +36,14 @@ import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.widget.Toast
-// import androidx.annotation.RequiresApi
-// import com.muddzdev.quickshot.QuickShot
+import androidx.documentfile.provider.DocumentFile
+import androidx.preference.PreferenceManager
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.OutputStream
+// import androidx.annotation.RequiresApi
+// import com.muddzdev.quickshot.QuickShot
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
@@ -50,11 +54,11 @@ import kotlin.properties.Delegates
 class ScreenshotActivity : Activity() {
 
     private val projectionRequestCode = 1000
-    // private val documentRequestCode = 1001
     // private val REQUEST_ON = true
 
     private lateinit var fileLocation: String
     private lateinit var fileName: String
+    private lateinit var fileOutputStream: OutputStream
 
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
@@ -74,9 +78,18 @@ class ScreenshotActivity : Activity() {
 
     // https://stackoverflow.com/a/37486214
     private fun getFiles() {  // regenerate filename
-        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
+        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm")).toString()
         fileName = "Screenshot-$fileDate.png"
-        fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+            val dir = preferences.getString("directory", null).toString()
+            val uri = Uri.parse(dir)
+            val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, uri)!!
+            val newDocumentFile: DocumentFile = documentFile.createFile("image/png", fileName)!!
+            fileOutputStream = contentResolver.openOutputStream(newDocumentFile.uri, "rwt")!!
+        } else {
+            fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
+        }
     }
 
     /* private fun getLocation(): String {
@@ -179,9 +192,6 @@ class ScreenshotActivity : Activity() {
         override fun onImageAvailable(reader: ImageReader) {
             val onViewWidth = outerClass.get()!!.mViewWidth
             val onViewHeight = outerClass.get()!!.mViewHeight
-            val onFileLocation = outerClass.get()!!.fileLocation
-            val onFileName  = outerClass.get()!!.fileName
-            val onFileTarget = File(onFileLocation + File.separator  + onFileName)
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
@@ -193,15 +203,27 @@ class ScreenshotActivity : Activity() {
                 Bitmap.Config.ARGB_8888,
                 false
             )
-            buffer.rewind()
             bitmap.copyPixelsFromBuffer(buffer)
-            val fos = FileOutputStream(onFileTarget)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
-            fos.close()
+            buffer.rewind()
             buffer.clear()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // https://stackoverflow.com/a/49998139
+                val fileOutputStream = outerClass.get()!!.fileOutputStream
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+                val byteArray = byteArrayOutputStream.toByteArray()
+                fileOutputStream.write(byteArray)
+                fileOutputStream.close()
+            } else {
+                val onFileLocation = outerClass.get()!!.fileLocation
+                val onFileName  = outerClass.get()!!.fileName
+                val onFileTarget = File(onFileLocation + File.separator  + onFileName)
+                val fileOutputStream = FileOutputStream(onFileTarget)
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                fileOutputStream.close()
+            }
             bitmap.recycle()
             image.close()
-            outerClass.get()!!.stopProjection()
         }
     }
 
@@ -256,32 +278,31 @@ class ScreenshotActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == projectionRequestCode && resultCode == RESULT_OK && data != null) {  // if yes, call MediaFunction to capture the current screen display
-            // TimeUnit.SECONDS.sleep(5L)  // its freezes the UI
-            // just write it the foreground, don't need it to run Media Projection
-            /* if (screenshotService == null) {
-                Toast.makeText(this, "wait for screenshotService binder ..", Toast.LENGTH_LONG).show()
-                return
+        if (resultCode == RESULT_OK && data != null) {
+            when (requestCode) {
+                projectionRequestCode -> {  // call MediaFunction to capture the current screen display
+                    // TimeUnit.SECONDS.sleep(5L)  // its freezes the UI
+                    // just write it the foreground, don't need it to run Media Projection
+                    /* if (screenshotService == null) {
+                        Toast.makeText(this, "wait for screenshotService binder ..", Toast.LENGTH_LONG).show()
+                        return
+                    }
+                    Toast.makeText(this, "screenshotService binder is found.", Toast.LENGTH_LONG).show()
+                    mMediaProjection = screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data) */
+                    mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
+                    createViewValues()
+                    mHandler.postDelayed({
+                        // https://stackoverflow.com/a/54352394
+                        createVirtualDisplay()
+                        createOverListener()
+                        stopProjection()
+                        createFileBroadcast()
+                        Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
+                    }, 3000)  // 5000ms == 5s}
+                }
+                else -> return
             }
-            Toast.makeText(this, "screenshotService binder is found.", Toast.LENGTH_LONG).show()
-            mMediaProjection = screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data) */
-            mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
-            createViewValues()
-            mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
-                createVirtualDisplay()
-                createOverListener()
-                createFileBroadcast()
-                Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
-            }, 3000)  // 5000ms == 5s
         }
-        /* if (requestCode == documentRequestCode && resultCode == RESULT_OK && data != null) {
-            val directoryUri = data.data ?: return
-            contentResolver.takePersistableUriPermission(
-                directoryUri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            showDirectoryContents(directoryUri)
-        } */
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
