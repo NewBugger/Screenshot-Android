@@ -177,7 +177,6 @@ class ScreenshotActivity : Activity() {
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
-            // logcat:: W/roid.screensho: Core platform API violation: Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
             val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
                 outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
                 onViewWidth,
@@ -185,6 +184,9 @@ class ScreenshotActivity : Activity() {
                 Bitmap.Config.ARGB_8888,
                 false
             )
+            // logcat:: W/roid.screensho: Core platform API violation:
+            // Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
+            // TODO: replace Bitmap.copyPixelsFromBuffer() method
             bitmap.copyPixelsFromBuffer(buffer)
             buffer.rewind()
             buffer.clear()
@@ -237,6 +239,7 @@ class ScreenshotActivity : Activity() {
             // https://developer.android.com/reference/android/content/ContentResolver#insert(android.net.Uri,%20android.content.ContentValues)
             val values = ContentValues(3)
             values.put(MediaStore.Images.Media.TITLE, fileName)
+            // TODO: express "Screenshot" dir using SAF uri
             values.put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES.toString() + File.separator + "Screenshot")
             values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
             contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
