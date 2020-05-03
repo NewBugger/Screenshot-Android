@@ -14,7 +14,8 @@ use it via Notification Panel
 
 ### TODO
  - call method improvement
- - Storage Access Framework (compulsorily because Android 10 restriction)
+ - bugfix: `logcat.Warning:: W/roid.screensho: Core platform API violation: Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI`
+ - Storage Access Framework (compulsorily because Android 10 restriction) -> completed
 
 ### License
 GPL V3
