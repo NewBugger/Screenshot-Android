@@ -157,6 +157,10 @@ class ScreenshotActivity : Activity() {
         mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
     }
 
+    private fun createFinishToast() {
+        Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
+    }
+
     private fun startProjection() {
         startActivityForResult(  // request Projection allowed with each tap
             mMediaProjectionManager.createScreenCaptureIntent(),
@@ -177,6 +181,9 @@ class ScreenshotActivity : Activity() {
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
+            // logcat:: W/roid.screensho: Core platform API violation:
+            // Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
+            // TODO: replace Bitmap.copyPixelsFromBuffer() method
             val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
                 outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
                 onViewWidth,
@@ -184,19 +191,14 @@ class ScreenshotActivity : Activity() {
                 Bitmap.Config.ARGB_8888,
                 false
             )
-            // logcat:: W/roid.screensho: Core platform API violation:
-            // Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
-            // TODO: replace Bitmap.copyPixelsFromBuffer() method
             bitmap.copyPixelsFromBuffer(buffer)
             buffer.rewind()
             buffer.clear()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // https://stackoverflow.com/a/49998139
-                val fileOutputStream: OutputStream = outerClass.get()!!.contentResolver.openOutputStream(outerClass.get()!!.fileNewDocument, "rwt")!!
-                val byteArrayOutputStream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
-                val byteArray = byteArrayOutputStream.toByteArray()
-                fileOutputStream.write(byteArray)
+                // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
+                val fileOutputStream: OutputStream = outerClass.get()!!.contentResolver.openOutputStream(outerClass.get()!!.fileNewDocument, "rw")!!
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                 fileOutputStream.close()
             } else {
                 val onFileLocation = outerClass.get()!!.fileLocation
@@ -282,8 +284,8 @@ class ScreenshotActivity : Activity() {
                         createVirtualDisplay()
                         createOverListener()
                         createFileBroadcast()
-                        Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
-                    }, 3000)  // 5000ms == 5s}
+                        createFinishToast()
+                    }, 3000)  // 5000ms == 5s
                 }
                 else -> return
             }
