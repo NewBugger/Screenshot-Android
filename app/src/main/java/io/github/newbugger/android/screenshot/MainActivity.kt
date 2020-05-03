@@ -37,8 +37,8 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
         )
         for (permission in permissions) {
             if (ContextCompat.checkSelfPermission(this, permission) != PermissionChecker.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
                 Toast.makeText(this, "Storage Permission requested.", Toast.LENGTH_LONG).show()
+                ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
             }
         }
         // while System Screenshot dir is in /Screenshots
@@ -54,6 +54,7 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
     // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/java/com/example/android/ktfiles/MainActivity.kt
     // https://developer.android.com/training/data-storage/shared/documents-files#grant-access-directory
     private fun setDocumentAccess() {
+        Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION and
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
