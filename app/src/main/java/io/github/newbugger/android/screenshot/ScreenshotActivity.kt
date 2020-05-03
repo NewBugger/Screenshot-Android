@@ -92,24 +92,6 @@ class ScreenshotActivity : Activity() {
         }
     }
 
-    /* private fun getLocation(): String {
-        return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
-            Environment.getExternalStorageDirectory().toString() + File.separator + Environment.DIRECTORY_PICTURES.toString() + "/Screenshot"
-        } else {
-            ""
-        }
-    } */
-
-    /* https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/java/com/example/android/ktfiles/MainActivity.kt
-    private fun showDirectoryContents(directoryUri: Uri) {
-        supportFragmentManager.transaction {
-            val directoryTag = directoryUri.toString()
-            val directoryFragment = DirectoryFragment.newInstance(directoryUri)
-            replace(R.id.fragment_container, directoryFragment, directoryTag)
-            addToBackStack(directoryTag)
-        }
-    } */
-
     private fun createObjectThread() {
         object : Thread() {  // start capture handling thread
             override fun run() {

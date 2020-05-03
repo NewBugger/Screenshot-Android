@@ -63,8 +63,6 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
         startActivityForResult(intent, documentRequestCode)
     }
 
-    // temporarily downgrade to target 28
-    // before SAF is applied here
     private fun setFiles() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             setDocumentAccess()
@@ -92,8 +90,10 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
                         directoryUri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION and Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
-                    val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-                    preferences.edit().putString("directory", directoryUri.toString()).apply()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+                        preferences.edit().putString("directory", directoryUri.toString()).apply()
+                    }
                 }
                 else -> return
             }
