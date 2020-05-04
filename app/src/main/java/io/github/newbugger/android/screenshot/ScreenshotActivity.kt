@@ -139,11 +139,11 @@ class ScreenshotActivity : Activity() {
             1
         )
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-            "capture_screen",
+            "screenshot",
             mViewWidth,
             mViewHeight,
             mDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY and DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
             mImageReader.surface,
             null,
             mHandler
@@ -181,13 +181,17 @@ class ScreenshotActivity : Activity() {
             val onViewHeight = outerClass.get()!!.mViewHeight
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
+            val pixelStride = planes[0].pixelStride
+            val rowStride = planes[0].rowStride
+            val rowPadding = rowStride - pixelStride * onViewWidth
+            val rowWidth = onViewWidth + rowPadding / pixelStride
             val buffer: ByteBuffer = planes[0].buffer
             // logcat:: W/roid.screensho: Core platform API violation:
             // Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
             // TODO: replace Bitmap.copyPixelsFromBuffer() method
             val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
                 outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
-                onViewWidth,
+                rowWidth,
                 onViewHeight,
                 Bitmap.Config.ARGB_8888,
                 false
@@ -197,14 +201,16 @@ class ScreenshotActivity : Activity() {
                 // https://stackoverflow.com/a/49998139
                 // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
                 val fileOutputStream: OutputStream = outerClass.get()!!.contentResolver.openOutputStream(outerClass.get()!!.fileNewDocument, "rw")!!
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+                fileOutputStream.flush()
                 fileOutputStream.close()
             } else {
                 val onFileLocation = outerClass.get()!!.fileLocation
                 val onFileName  = outerClass.get()!!.fileName
                 val onFileTarget = File(onFileLocation + File.separator  + onFileName)
                 val fileOutputStream = FileOutputStream(onFileTarget)
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+                fileOutputStream.flush()
                 fileOutputStream.close()
             }
             bitmap.recycle()

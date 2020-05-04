@@ -12,6 +12,7 @@ package io.github.newbugger.android.screenshot
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
@@ -28,6 +29,8 @@ import java.io.File
 class MainActivity : Activity() {  // temporarily a fake and null activity
 
     private val documentRequestCode = 1001
+
+    private lateinit var preferences: SharedPreferences
 
     private fun setStorageAccess() {
         val requestCode = 232
@@ -54,6 +57,8 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
     // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/java/com/example/android/ktfiles/MainActivity.kt
     // https://developer.android.com/training/data-storage/shared/documents-files#grant-access-directory
     private fun setDocumentAccess() {
+        preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        if (preferences.getString("directory", null) != null) return
         Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION and
@@ -91,10 +96,7 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
                         directoryUri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION and Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-                        preferences.edit().putString("directory", directoryUri.toString()).apply()
-                    }
+                    preferences.edit().putString("directory", directoryUri.toString()).apply()
                 }
                 else -> return
             }
