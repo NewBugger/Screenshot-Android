@@ -56,6 +56,7 @@ class ScreenshotActivity : Activity() {
     private lateinit var mDisplayMetrics: DisplayMetrics
     private lateinit var mWindowManager: WindowManager
     private lateinit var mImageReader: ImageReader
+    private lateinit var mStopProjectionEventListener: ScreenshotService.StopProjectionEventListener
     private lateinit var mHandler: Handler
 
     private var mViewWidth by Delegates.notNull<Int>()
@@ -159,6 +160,13 @@ class ScreenshotActivity : Activity() {
         createTransferValues()
         screenshotService.createImageListener()
         mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
+        mStopProjectionEventListener = ScreenshotService.StopProjectionEventListener()
+        mStopProjectionEventListener.setStopProjectionEventListener(object:
+            ScreenshotService.StopProjectionEventListener.OnStopProjectionEventListener {
+            override fun onStopProjection() {
+                stopProjection()
+            }
+        })
         // TODO: bugfix:: not allowed stop projection when in setPixel mode ?
         // stopProjection()
     }

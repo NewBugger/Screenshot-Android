@@ -58,12 +58,11 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
     private fun setDocumentAccess() {
         if (preferences.getString("directory", null) != null) return
         Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
+        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also { intent ->
+            intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            intent.putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
+            startActivityForResult(intent, documentRequestCode)
         }
-        startActivityForResult(intent, documentRequestCode)
     }
 
     private fun setFiles() {

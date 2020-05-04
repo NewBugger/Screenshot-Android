@@ -110,6 +110,22 @@ class ScreenshotService : Service() {
         )
     }
 
+    private fun createListenerTrigger() {
+        val listener = StopProjectionEventListener().listener
+        listener?.onStopProjection()
+    }
+
+    // https://github.com/codepath/android_guides/wiki/Creating-Custom-Listeners
+    class StopProjectionEventListener {
+        interface OnStopProjectionEventListener {
+            fun onStopProjection()
+        }
+        var listener: OnStopProjectionEventListener? = null
+        fun setStopProjectionEventListener(listener: OnStopProjectionEventListener?) {
+            this.listener = listener
+        }
+    }
+
     private class ImageAvailableListener(private val outerClass: WeakReference<ScreenshotService>) : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
             val onViewWidth = outerClass.get()!!.mViewWidth
@@ -123,13 +139,14 @@ class ScreenshotService : Service() {
             // logcat:: W/roid.screensho: Core platform API violation:
             // Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
             // TODO: replace Bitmap.copyPixelsFromBuffer() method
-            val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
-                outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
-                onViewWidth,
-                onViewHeight,
-                Bitmap.Config.ARGB_8888,
-                false
-            )
+            val bitmap =
+                Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
+                    outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
+                    onViewWidth,
+                    onViewHeight,
+                    Bitmap.Config.ARGB_8888,
+                    false
+                )
             if (outerClass.get()!!.preferences.getBoolean("setPixel", true)) {
                 // logcat:: I/Choreographer: Skipped 120 frames!  The application may be doing too much work on its main thread.
                 // TODO: find a method more efficient
@@ -141,14 +158,18 @@ class ScreenshotService : Service() {
             if (outerClass.get()!!.getSAFPreference()) {
                 // https://stackoverflow.com/a/49998139
                 // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
-                val fileOutputStream: OutputStream = outerClass.get()!!.contentResolver.openOutputStream(outerClass.get()!!.fileNewDocument, "rw")!!
+                val fileOutputStream: OutputStream =
+                    outerClass.get()!!.contentResolver.openOutputStream(
+                        outerClass.get()!!.fileNewDocument,
+                        "rw"
+                    )!!
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                 fileOutputStream.flush()
                 fileOutputStream.close()
             } else {
                 val onFileLocation = outerClass.get()!!.fileLocation
-                val onFileName  = outerClass.get()!!.fileName
-                val onFileTarget = File(onFileLocation + File.separator  + onFileName)
+                val onFileName = outerClass.get()!!.fileName
+                val onFileTarget = File(onFileLocation + File.separator + onFileName)
                 val fileOutputStream = FileOutputStream(onFileTarget)
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                 fileOutputStream.flush()
@@ -157,6 +178,7 @@ class ScreenshotService : Service() {
             buffer.clear()
             bitmap.recycle()
             image.close()
+            outerClass.get()!!.createListenerTrigger()
             outerClass.get()!!.createFileBroadcast()
             outerClass.get()!!.createFinishToast()
         }
