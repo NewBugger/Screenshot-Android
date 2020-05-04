@@ -159,6 +159,7 @@ class ScreenshotActivity : Activity() {
         createTransferValues()
         screenshotService.createImageListener()
         mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
+        // TODO: bugfix:: not allowed stop projection when in setPixel mode ?
         // stopProjection()
     }
 
