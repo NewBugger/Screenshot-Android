@@ -11,38 +11,31 @@ package io.github.newbugger.android.screenshot
 
 import android.app.Activity
 import android.content.ComponentName
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.graphics.Bitmap
 import android.graphics.PixelFormat.RGBA_8888
 import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
-import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment.DIRECTORY_PICTURES
-import android.os.Environment.getExternalStoragePublicDirectory
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
-import android.provider.MediaStore
+import android.os.Environment.DIRECTORY_PICTURES
+import android.os.Environment.getExternalStoragePublicDirectory
 import android.util.DisplayMetrics
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
 import java.lang.ref.WeakReference
-import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.properties.Delegates
@@ -73,15 +66,16 @@ class ScreenshotActivity : Activity() {
     private lateinit var screenshotService: ScreenshotService
     private var screenshotBound: Boolean = false
 
-    private fun getSDKLimit(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+    private fun getSAFPreference(): Boolean {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        return preferences.getBoolean("saf", true)
     }
 
     // https://stackoverflow.com/a/37486214
     private fun getFiles() {  // regenerate filename
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
-        if (getSDKLimit()) {
+        if (getSAFPreference()) {
             val preferences = PreferenceManager.getDefaultSharedPreferences(this)
             val dir = preferences.getString("directory", null).toString()
             val uri = Uri.parse(dir)
@@ -97,12 +91,14 @@ class ScreenshotActivity : Activity() {
         object : Thread() {  // start capture handling thread
             override fun run() {
                 Looper.prepare()
-                /* mHandler = if (Looper.myLooper() != null) {
-                    Handler(Looper.myLooper()!!)  // https://developer.android.com/reference/android/os/Handler#Handler()
+                val handlerThread = HandlerThread("HandlerThread")
+                handlerThread.start()
+                val loop = handlerThread.looper
+                mHandler = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    Handler.createAsync(loop)
                 } else {
-                    Handler()  // deprecated in api 30.
-                } */
-                mHandler = Handler()
+                    Handler(loop)
+                }
                 Looper.loop()
             }
         }.start()
@@ -143,23 +139,27 @@ class ScreenshotActivity : Activity() {
             mViewWidth,
             mViewHeight,
             mDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY and DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
             mImageReader.surface,
             null,
             mHandler
         )
     }
 
-    private fun createOverListener() {
-        mImageReader.setOnImageAvailableListener(
-            ImageAvailableListener(WeakReference(this)),
-            mHandler
-        )
-        mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
+    private fun createTransferValues() {
+        val tFileDirectory = if (getSAFPreference()) {
+            fileNewDocument
+        } else {
+            fileLocation
+        }
+        screenshotService.createPublicValues(mDisplayMetrics, mImageReader, mViewWidth, mViewHeight, fileName, tFileDirectory)
     }
 
-    private fun createFinishToast() {
-        Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
+    private fun createOverListeners() {
+        createTransferValues()
+        screenshotService.createImageListener()
+        mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
+        // stopProjection()
     }
 
     private fun startProjection() {
@@ -172,50 +172,6 @@ class ScreenshotActivity : Activity() {
     private fun stopProjection() {
         mHandler.post {  // after image saved, stop MediaFunction intent
             mMediaProjection.stop()
-        }
-    }
-
-    private class ImageAvailableListener(private val outerClass: WeakReference<ScreenshotActivity>) : ImageReader.OnImageAvailableListener {
-        override fun onImageAvailable(reader: ImageReader) {
-            val onViewWidth = outerClass.get()!!.mViewWidth
-            val onViewHeight = outerClass.get()!!.mViewHeight
-            val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
-            val planes: Array<Image.Plane> = image.planes
-            val pixelStride = planes[0].pixelStride
-            val rowStride = planes[0].rowStride
-            val rowPadding = rowStride - pixelStride * onViewWidth
-            val rowWidth = onViewWidth + rowPadding / pixelStride
-            val buffer: ByteBuffer = planes[0].buffer
-            // logcat:: W/roid.screensho: Core platform API violation:
-            // Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
-            // TODO: replace Bitmap.copyPixelsFromBuffer() method
-            val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
-                outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
-                rowWidth,
-                onViewHeight,
-                Bitmap.Config.ARGB_8888,
-                false
-            )
-            bitmap.copyPixelsFromBuffer(buffer)
-            if (outerClass.get()!!.getSDKLimit()) {
-                // https://stackoverflow.com/a/49998139
-                // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
-                val fileOutputStream: OutputStream = outerClass.get()!!.contentResolver.openOutputStream(outerClass.get()!!.fileNewDocument, "rw")!!
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
-                fileOutputStream.flush()
-                fileOutputStream.close()
-            } else {
-                val onFileLocation = outerClass.get()!!.fileLocation
-                val onFileName  = outerClass.get()!!.fileName
-                val onFileTarget = File(onFileLocation + File.separator  + onFileName)
-                val fileOutputStream = FileOutputStream(onFileTarget)
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
-                fileOutputStream.flush()
-                fileOutputStream.close()
-            }
-            bitmap.recycle()
-            image.close()
-            outerClass.get()!!.stopProjection()
         }
     }
 
@@ -240,26 +196,6 @@ class ScreenshotActivity : Activity() {
         }
     }
 
-    private fun createFileBroadcast() {
-        if (getSDKLimit()) {
-            // https://stackoverflow.com/a/59196277
-            // https://developer.android.com/reference/android/content/ContentResolver#insert(android.net.Uri,%20android.content.ContentValues)
-            val values = ContentValues(3)
-            values.put(MediaStore.Images.Media.TITLE, fileName)
-            // TODO: express "Screenshot" dir using SAF uri
-            values.put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES.toString() + File.separator + "Screenshot")
-            values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        } else {
-            // https://developer.android.com/training/camera/photobasics#TaskGallery
-            Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
-                val file = File(fileLocation + File.separator  + fileName)
-                mediaScanIntent.data = Uri.fromFile(file)
-                sendBroadcast(mediaScanIntent)
-            }
-        }
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK && data != null) {
@@ -278,9 +214,7 @@ class ScreenshotActivity : Activity() {
                     mHandler.postDelayed({
                         // https://stackoverflow.com/a/54352394
                         createVirtualDisplay()
-                        createOverListener()
-                        createFileBroadcast()
-                        createFinishToast()
+                        createOverListeners()
                     }, 3000)  // 5000ms == 5s
                 }
                 else -> return
@@ -328,3 +262,9 @@ class ScreenshotActivity : Activity() {
     } */
 
 }
+
+// https://stackoverflow.com/a/48474529
+// https://stackoverflow.com/a/14296609
+// https://stackoverflow.com/a/49208513
+// private infix fun Byte.shl(that: Int): Int = this.toInt().shl(that)
+// private infix fun Byte.and(that: Int): Int = this.toInt().and(that)

@@ -1,0 +1,34 @@
+<!--
+  ~ Copyright (c) 2018-2020 : NewBugger (https://github.com/NewBugger)
+  ~
+  ~ This is free software; you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation; either version 3 of the License, or
+  ~ (at your option) any later version.
+  -->
+
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory app:title="@string/settings_header">
+
+        <SwitchPreference
+            app:key="saf"
+            android:defaultValue="true"
+            app:title="@string/saf_title"
+            android:switchTextOn="@string/saf_switch"
+            android:summaryOn="@string/saf_summary" />
+
+        <SwitchPreference
+            app:key="setPixel"
+            android:defaultValue="true"
+            app:title="@string/pixel_title"
+            android:switchTextOn="@string/pixel_switch_on"
+            android:summaryOn="@string/pixel_summary_on"
+            android:switchTextOff="@string/pixel_switch_off"
+            android:summaryOff="@string/pixel_summary_off" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

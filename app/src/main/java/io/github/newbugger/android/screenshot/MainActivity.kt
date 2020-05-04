@@ -10,15 +10,14 @@
 package io.github.newbugger.android.screenshot
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.SharedPreferences
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
 import android.provider.DocumentsContract.EXTRA_INITIAL_URI
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
@@ -26,7 +25,7 @@ import androidx.preference.PreferenceManager
 import java.io.File
 
 
-class MainActivity : Activity() {  // temporarily a fake and null activity
+class MainActivity : AppCompatActivity() {  // temporarily a fake and null activity
 
     private val documentRequestCode = 1001
 
@@ -57,20 +56,19 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
     // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/java/com/example/android/ktfiles/MainActivity.kt
     // https://developer.android.com/training/data-storage/shared/documents-files#grant-access-directory
     private fun setDocumentAccess() {
-        preferences = PreferenceManager.getDefaultSharedPreferences(this)
         if (preferences.getString("directory", null) != null) return
         Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION and
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
         }
         startActivityForResult(intent, documentRequestCode)
     }
 
-    // TODO: add option for SAF or Storage root
     private fun setFiles() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        if (preferences.getBoolean("saf", true)) {
             setDocumentAccess()
         } else {
             setStorageAccess()
@@ -94,7 +92,7 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
                     val directoryUri = data.data ?: return
                     contentResolver.takePersistableUriPermission(
                         directoryUri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION and Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
                     preferences.edit().putString("directory", directoryUri.toString()).apply()
                 }
@@ -106,6 +104,10 @@ class MainActivity : Activity() {  // temporarily a fake and null activity
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.content, SettingsFragment())
+            .commit()
         setFiles()
         startForeService()
     }

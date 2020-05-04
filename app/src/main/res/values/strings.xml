@@ -1,5 +1,13 @@
 <resources>
     <string name="app_name">Screenshot</string>
-    <string name="main_text">using notification intent to take Screenshot.</string>
     <string name="notification_button">start</string>
+    <string name="settings_header">Settings</string>
+    <string name="saf_title">SAF</string>
+    <string name="saf_switch">enable SAF</string>
+    <string name="saf_summary">enable Storage Access Framework</string>
+    <string name="pixel_title">bitmap.setPixel</string>
+    <string name="pixel_switch_on">use bitmap.setPixel</string>
+    <string name="pixel_summary_on">use bitmap.setPixel() to generate pixels</string>
+    <string name="pixel_switch_off">use bitmap.copyPixelsFromBuffer</string>
+    <string name="pixel_summary_off">use bitmap.copyPixelsFromBuffer() to generate pixels</string>
 </resources>
