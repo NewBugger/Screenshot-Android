@@ -17,16 +17,14 @@
             app:key="saf"
             android:defaultValue="true"
             app:title="@string/saf_title"
-            android:switchTextOn="@string/saf_switch"
-            android:summaryOn="@string/saf_summary" />
+            android:summaryOn="@string/saf_summary_on"
+            android:summaryOff="@string/saf_summary_off"/>
 
         <SwitchPreference
             app:key="setPixel"
             android:defaultValue="true"
             app:title="@string/pixel_title"
-            android:switchTextOn="@string/pixel_switch_on"
             android:summaryOn="@string/pixel_summary_on"
-            android:switchTextOff="@string/pixel_switch_off"
             android:summaryOff="@string/pixel_summary_off" />
 
     </PreferenceCategory>
