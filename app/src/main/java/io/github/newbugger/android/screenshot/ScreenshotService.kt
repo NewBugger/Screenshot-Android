@@ -20,9 +20,14 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
+import android.graphics.PixelFormat
+import android.graphics.Point
 import android.graphics.drawable.Icon
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
+import android.media.projection.MediaProjection
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
@@ -31,14 +36,19 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
 import android.os.Environment.DIRECTORY_PICTURES
+import android.os.Environment.getExternalStoragePublicDirectory
 import android.provider.MediaStore
 import android.util.DisplayMetrics
+import android.view.WindowManager
 import android.widget.Toast
+import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.properties.Delegates
 
 
@@ -53,11 +63,17 @@ class ScreenshotService : Service() {
     private lateinit var fileName: String
     private lateinit var fileNewDocument: Uri
     private lateinit var preferences: SharedPreferences
+
+    private lateinit var mMediaProjection: MediaProjection
+    private lateinit var mVirtualDisplay: VirtualDisplay
     private lateinit var mDisplayMetrics: DisplayMetrics
+    private lateinit var mWindowManager: WindowManager
     private lateinit var mImageReader: ImageReader
     private lateinit var mHandler: Handler
+
     private var mViewWidth by Delegates.notNull<Int>()
     private var mViewHeight by Delegates.notNull<Int>()
+    private var mDensity by Delegates.notNull<Int>()
 
     private fun getSDKLimit(): Boolean {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
@@ -68,60 +84,119 @@ class ScreenshotService : Service() {
         return preferences.getBoolean("saf", true)
     }
 
+    // https://stackoverflow.com/a/37486214
+    private fun getFiles() {  // regenerate filename
+        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
+        fileName = "Screenshot-$fileDate.png"
+        if (getSAFPreference()) {
+            val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+            val dir = preferences.getString("directory", null).toString()
+            val uri = Uri.parse(dir)
+            val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, uri)!!
+            val newDocumentFile = documentFile.createFile("image/png", fileName)!!
+            fileNewDocument = newDocumentFile.uri
+        } else {
+            fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
+        }
+    }
+
     private fun createObjectThread() {
-        object : Thread() {  // start capture handling thread
+        object : HandlerThread("HandlerThread") {  // start capture handling thread
             override fun run() {
                 Looper.prepare()
                 // https://stackoverflow.com/a/42179437
-                val handlerThread = HandlerThread("HandlerThread")
+                /* val handlerThread = HandlerThread("HandlerThread")
                 handlerThread.start()
                 val loop = handlerThread.looper
                 mHandler = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     Handler.createAsync(loop)
                 } else {
                     Handler(loop)
-                }
+                } */
+                mHandler = Handler()
                 Looper.loop()
             }
         }.start()
     }
 
-    fun createPublicValues(tDisplayMetrics: DisplayMetrics,
-                           tImageReader :ImageReader,
-                           tViewWidth: Int, tViewHeight: Int,
-                           tFileName: String, tFileDirectory: Any) {
+    fun createMediaValues(tMediaProjection: MediaProjection,
+                          tWindowManager: WindowManager,
+                          tDisplayMetrics: DisplayMetrics) {
+        mMediaProjection = tMediaProjection
+        mWindowManager = tWindowManager
         mDisplayMetrics = tDisplayMetrics
-        mImageReader = tImageReader
-        mViewWidth = tViewWidth
-        mViewHeight = tViewHeight
-        fileName = tFileName
-        if (getSAFPreference()) {
-            fileNewDocument = tFileDirectory as Uri
-        } else {
-            fileLocation = tFileDirectory as String
-        }
     }
 
-    fun createImageListener() {
-        mImageReader.setOnImageAvailableListener(
-            ImageAvailableListener(),
+    private fun createViewValues() {
+        // Android 10 cannot install app include Android 11 apis
+        /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // https://developer.android.com/reference/android/view/Display#getSize(android.graphics.Point)
+            // https://developer.android.com/reference/android/view/WindowManager#getCurrentWindowMetrics()
+            // https://developer.android.com/reference/android/view/WindowMetrics#getSize()
+            mViewWidth = mWindowManager.currentWindowMetrics.size.width
+            mViewHeight = mWindowManager.currentWindowMetrics.size.height
+        } else { */
+        // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
+        // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
+        val mDisplay = mWindowManager.defaultDisplay
+        val size = Point()
+        mDisplay.getRealSize(size)
+        mViewWidth = size.x
+        mViewHeight = size.y
+        /* } */
+        mDensity = mDisplayMetrics.densityDpi
+        getFiles()
+    }
+
+    private fun createVirtualDisplay() {
+        mImageReader = ImageReader.newInstance(
+            mViewWidth,
+            mViewHeight,
+            PixelFormat.RGBA_8888,
+            1
+        )
+        mVirtualDisplay = mMediaProjection.createVirtualDisplay(
+            "screenshot",
+            mViewWidth,
+            mViewHeight,
+            mDensity,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+            mImageReader.surface,
+            null,
             mHandler
         )
     }
 
-    private fun createListenerTrigger() {
-        val listener = StopProjectionEventListener().listener
-        listener?.onStopProjection()
+    private fun createWorkListeners() {
+        mImageReader.setOnImageAvailableListener(
+            ImageAvailableListener(),
+            mHandler
+        )
+        mMediaProjection.registerCallback(MediaProjectionStopCallback(), mHandler)  // register media projection stop callback
     }
 
-    // https://github.com/codepath/android_guides/wiki/Creating-Custom-Listeners
-    class StopProjectionEventListener {
-        interface OnStopProjectionEventListener {
-            fun onStopProjection()
+    private fun createWorkerTasks() {
+        createObjectThread()
+        createViewValues()
+        mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
+            createVirtualDisplay()
+            createWorkListeners()
+        }, 3000)  // 5000ms == 5s}
+    }
+
+    private fun stopProjection() {
+        mHandler.post {  // after image saved, stop MediaFunction intent
+            mMediaProjection.stop()
         }
-        var listener: OnStopProjectionEventListener? = null
-        fun setStopProjectionEventListener(listener: OnStopProjectionEventListener?) {
-            this.listener = listener
+    }
+
+    private inner class MediaProjectionStopCallback : MediaProjection.Callback() {
+        override fun onStop() {
+            mHandler.post {
+                mVirtualDisplay.release()
+                mImageReader.setOnImageAvailableListener(null, null)
+                mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
+            }
         }
     }
 
@@ -158,11 +233,7 @@ class ScreenshotService : Service() {
             if (getSAFPreference()) {
                 // https://stackoverflow.com/a/49998139
                 // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
-                val fileOutputStream: OutputStream =
-                    contentResolver.openOutputStream(
-                        fileNewDocument,
-                        "rw"
-                    )!!
+                val fileOutputStream: OutputStream = contentResolver.openOutputStream(fileNewDocument, "rw")!!
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                 fileOutputStream.flush()
                 fileOutputStream.close()
@@ -178,7 +249,7 @@ class ScreenshotService : Service() {
             buffer.clear()
             bitmap.recycle()
             image.close()
-            createListenerTrigger()
+            stopProjection()
             createFileBroadcast()
             createFinishToast()
         }
@@ -292,8 +363,8 @@ class ScreenshotService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        createObjectThread()
         startInForeground()
+        if (intent.getStringExtra("flag") == "capture") createWorkerTasks()
         return START_NOT_STICKY
     }
 
@@ -303,9 +374,17 @@ class ScreenshotService : Service() {
     }
 
     companion object {
-        fun start(context: Context) {
-            val intent = Intent(context, ScreenshotService::class.java)
-            context.startService(intent)
+        fun startForeground(context: Context) {
+            Intent(context, ScreenshotService::class.java).also { intent ->
+                context.startService(intent)
+            }
+        }
+
+        fun startCapture(context: Context, flag: String) {
+            Intent(context, ScreenshotService::class.java).also { intent ->
+                intent.putExtra("flag", flag)
+                context.startService(intent)
+            }
         }
 
         /* fun stop(context: Context) {

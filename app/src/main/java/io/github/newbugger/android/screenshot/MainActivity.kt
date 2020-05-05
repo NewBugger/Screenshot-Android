@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
     }
 
     private fun startForeService() {
-        ScreenshotService.start(this)
+        ScreenshotService.startForeground(this)
     }
 
     // requires a button to stop Service
