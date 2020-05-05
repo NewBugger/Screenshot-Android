@@ -111,6 +111,8 @@ class ScreenshotService : Service() {
                 } else {
                     Handler(loop)
                 } */
+                // TODO: Handler() is deprecated in Android 11
+                // TODO: bug:: too many works on your main thread when on AVD but not mobiles
                 mHandler = Handler()
                 Looper.loop()
             }
@@ -126,6 +128,7 @@ class ScreenshotService : Service() {
     }
 
     private fun createViewValues() {
+        // TODO: full Android 11 (R) support
         // Android 10 cannot install app include Android 11 apis
         /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // https://developer.android.com/reference/android/view/Display#getSize(android.graphics.Point)
@@ -180,6 +183,7 @@ class ScreenshotService : Service() {
         mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
             createVirtualDisplay()
             createWorkListeners()
+        // TODO: replaced the method of time wait
         }, 3000)  // 5000ms == 5s}
     }
 
@@ -272,6 +276,7 @@ class ScreenshotService : Service() {
     }
 
     private fun createFinishToast() {
+        // TODO: bug on this toast -> the toast shows too many times
         Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
     }
 
@@ -383,10 +388,11 @@ class ScreenshotService : Service() {
             }
         }
 
+        // TODO: need a stop Foreground opener (2)
         /* fun stop(context: Context) {
             val intent = Intent(context, ScreenshotService::class.java)
             context.stopService(intent)
-        } */  // need stop Foreground opener
+        } */
     }
 
 }

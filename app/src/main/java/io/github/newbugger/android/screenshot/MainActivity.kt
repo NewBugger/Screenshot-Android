@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         ScreenshotService.startForeground(this)
     }
 
-    // requires a button to stop Service
+    // TODO: need a stop Foreground opener (1)
     /* private fun stopForeService() {
         ScreenshotService.stop(this)
     } */
@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
             when (requestCode) {
                 documentRequestCode -> {
                     val directoryUri = data.data ?: return
+                    // TODO: reduce the permission level
                     contentResolver.takePersistableUriPermission(
                         directoryUri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -104,6 +105,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setFiles()
+        // TODO: settings fragment UI
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.content, SettingsFragment())
