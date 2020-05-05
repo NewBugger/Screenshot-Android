@@ -261,14 +261,20 @@ class ScreenshotService : Service() {
             // https://developer.android.com/reference/android/content/ContentResolver#insert(android.net.Uri,%20android.content.ContentValues)
             val values = ContentValues(3)
             values.put(MediaStore.Images.Media.TITLE, fileName)
-            // TODO: express "Screenshot" dir using SAF uri
+            // TODO: express "Screenshot" dir using SAF uri (1)
             values.put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES.toString() + File.separator + "Screenshot")
             values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
             contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
         } else {
             // https://developer.android.com/training/camera/photobasics#TaskGallery
             Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
-                val file = File(fileLocation + File.separator  + fileName)
+                // TODO: express "Screenshot" dir using SAF uri (2)
+                val fileDir = if (getSAFPreference) {
+                    fileNewDocument.toString()
+                } else {
+                    fileLocation
+                }
+                val file = File(fileDir + File.separator  + fileName)
                 mediaScanIntent.data = Uri.fromFile(file)
                 sendBroadcast(mediaScanIntent)
             }
