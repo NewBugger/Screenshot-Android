@@ -19,8 +19,9 @@ import android.provider.DocumentsContract.EXTRA_INITIAL_URI
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
-import android.widget.Toolbar
+// import android.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
@@ -106,12 +107,14 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setActionBar(findViewById(R.id.toolbar_main))
+        // TODO: Activity() + setActionBar(), AppCompatActivity() + setSupportActionBar()
+        val toolbar = findViewById<Toolbar>(R.id.toolbar_main)
+        setSupportActionBar(toolbar)  // setActionBar(toolbar)
         setFiles()
         // TODO: settings fragment UI
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.content, SettingsFragment())
+            .replace(R.id.settings_main, SettingsFragment())
             .commit()
         startForeService()
     }
