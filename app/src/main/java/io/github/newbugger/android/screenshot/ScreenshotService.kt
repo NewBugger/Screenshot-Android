@@ -75,20 +75,18 @@ class ScreenshotService : Service() {
     private var mViewHeight by Delegates.notNull<Int>()
     private var mDensity by Delegates.notNull<Int>()
 
-    private fun getSDKLimit(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-    }
+    private var getSAFPreference by Delegates.notNull<Boolean>()
 
-    private fun getSAFPreference(): Boolean {
+    private fun getSAFPreference() {
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
-        return preferences.getBoolean("saf", true)
+        getSAFPreference = preferences.getBoolean("saf", true)
     }
 
     // https://stackoverflow.com/a/37486214
     private fun getFiles() {  // regenerate filename
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
-        if (getSAFPreference()) {
+        if (getSAFPreference) {
             val preferences = PreferenceManager.getDefaultSharedPreferences(this)
             val dir = preferences.getString("directory", null).toString()
             val uri = Uri.parse(dir)
@@ -145,6 +143,7 @@ class ScreenshotService : Service() {
         mViewHeight = size.y
         /* } */
         mDensity = mDisplayMetrics.densityDpi
+        getSAFPreference()
         getFiles()
     }
 
@@ -200,22 +199,15 @@ class ScreenshotService : Service() {
         }
     }
 
-    // use inner class tas a implicit reference
+    // use inner class as a implicit reference
     private inner class ImageAvailableListener : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
             val onViewWidth = mViewWidth
             val onViewHeight = mViewHeight
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
-            val pixelStride = planes[0].pixelStride
-            val rowStride = planes[0].rowStride
-            val rowPadding = rowStride - pixelStride * onViewWidth
             val buffer: ByteBuffer = planes[0].buffer
-            // logcat:: W/roid.screensho: Core platform API violation:
-            // Ljava/nio/Buffer;->address:J from Landroid/graphics/Bitmap; using JNI
-            // TODO: replace Bitmap.copyPixelsFromBuffer() method
-            val bitmap =
-                Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
+            val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
                     mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
                     onViewWidth,
                     onViewHeight,
@@ -226,11 +218,15 @@ class ScreenshotService : Service() {
                 // logcat:: I/Choreographer: Skipped 120 frames!  The application may be doing too much work on its main thread.
                 // TODO: find a method more efficient
                 // https://stackoverflow.com/questions/26673127/android-imagereader-acquirelatestimage-returns-invalid-jpg
+                val pixelStride = planes[0].pixelStride
+                val rowStride = planes[0].rowStride
+                val rowPadding = rowStride - pixelStride * onViewWidth
                 Utils.getColor(bitmap, buffer, onViewHeight, onViewWidth, pixelStride, rowPadding)
             } else {
+                // TODO: bug on this method -> picture not available
                 bitmap.copyPixelsFromBuffer(buffer)
             }
-            if (getSAFPreference()) {
+            if (getSAFPreference) {
                 // https://stackoverflow.com/a/49998139
                 // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
                 val fileOutputStream: OutputStream = contentResolver.openOutputStream(fileNewDocument, "rw")!!
@@ -256,7 +252,7 @@ class ScreenshotService : Service() {
     }
 
     private fun createFileBroadcast() {
-        if (getSDKLimit()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // https://stackoverflow.com/a/59196277
             // https://developer.android.com/reference/android/content/ContentResolver#insert(android.net.Uri,%20android.content.ContentValues)
             val values = ContentValues(3)

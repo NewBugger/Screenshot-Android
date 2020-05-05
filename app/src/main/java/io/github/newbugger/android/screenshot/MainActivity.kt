@@ -103,11 +103,11 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setFiles()
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.content, SettingsFragment())
             .commit()
-        setFiles()
         startForeService()
     }
 
