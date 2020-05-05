@@ -183,7 +183,7 @@ class ScreenshotActivity : Activity() {
         }
     }
 
-    private inner class MediaProjectionStopCallback() : MediaProjection.Callback() {
+    private inner class MediaProjectionStopCallback : MediaProjection.Callback() {
         override fun onStop() {
             mHandler.post {
                 mVirtualDisplay.release()
