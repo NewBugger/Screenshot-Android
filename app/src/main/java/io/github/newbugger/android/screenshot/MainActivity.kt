@@ -16,7 +16,10 @@ import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
 import android.provider.DocumentsContract.EXTRA_INITIAL_URI
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
+import android.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -78,10 +81,9 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         ScreenshotService.startForeground(this)
     }
 
-    // TODO: need a stop Foreground opener (1)
-    /* private fun stopForeService() {
+    private fun stopForeService() {
         ScreenshotService.stop(this)
-    } */
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -104,6 +106,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setActionBar(findViewById(R.id.toolbar_main))
         setFiles()
         // TODO: settings fragment UI
         supportFragmentManager
@@ -111,6 +114,17 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
             .replace(R.id.content, SettingsFragment())
             .commit()
         startForeService()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        super.onOptionsItemSelected(item)
+        if (item.itemId == R.id.action_stopper) stopForeService()
+        return false
     }
 
     /* override fun onResume() {

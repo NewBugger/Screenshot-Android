@@ -394,11 +394,10 @@ class ScreenshotService : Service() {
             }
         }
 
-        // TODO: need a stop Foreground opener (2)
-        /* fun stop(context: Context) {
+        fun stop(context: Context) {
             val intent = Intent(context, ScreenshotService::class.java)
             context.stopService(intent)
-        } */
+        }
     }
 
 }
