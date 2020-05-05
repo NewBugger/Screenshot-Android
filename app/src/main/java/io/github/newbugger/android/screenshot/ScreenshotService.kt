@@ -105,7 +105,7 @@ class ScreenshotService : Service() {
 
     fun createImageListener() {
         mImageReader.setOnImageAvailableListener(
-            ImageAvailableListener(WeakReference(this)),
+            ImageAvailableListener(),
             mHandler
         )
     }
@@ -126,10 +126,11 @@ class ScreenshotService : Service() {
         }
     }
 
-    private class ImageAvailableListener(private val outerClass: WeakReference<ScreenshotService>) : ImageReader.OnImageAvailableListener {
+    // use inner class tas a implicit reference
+    private inner class ImageAvailableListener : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
-            val onViewWidth = outerClass.get()!!.mViewWidth
-            val onViewHeight = outerClass.get()!!.mViewHeight
+            val onViewWidth = mViewWidth
+            val onViewHeight = mViewHeight
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val pixelStride = planes[0].pixelStride
@@ -141,13 +142,13 @@ class ScreenshotService : Service() {
             // TODO: replace Bitmap.copyPixelsFromBuffer() method
             val bitmap =
                 Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
-                    outerClass.get()!!.mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
+                    mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
                     onViewWidth,
                     onViewHeight,
                     Bitmap.Config.ARGB_8888,
                     false
                 )
-            if (outerClass.get()!!.preferences.getBoolean("setPixel", true)) {
+            if (preferences.getBoolean("setPixel", true)) {
                 // logcat:: I/Choreographer: Skipped 120 frames!  The application may be doing too much work on its main thread.
                 // TODO: find a method more efficient
                 // https://stackoverflow.com/questions/26673127/android-imagereader-acquirelatestimage-returns-invalid-jpg
@@ -155,20 +156,20 @@ class ScreenshotService : Service() {
             } else {
                 bitmap.copyPixelsFromBuffer(buffer)
             }
-            if (outerClass.get()!!.getSAFPreference()) {
+            if (getSAFPreference()) {
                 // https://stackoverflow.com/a/49998139
                 // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
                 val fileOutputStream: OutputStream =
-                    outerClass.get()!!.contentResolver.openOutputStream(
-                        outerClass.get()!!.fileNewDocument,
+                    contentResolver.openOutputStream(
+                        fileNewDocument,
                         "rw"
                     )!!
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                 fileOutputStream.flush()
                 fileOutputStream.close()
             } else {
-                val onFileLocation = outerClass.get()!!.fileLocation
-                val onFileName = outerClass.get()!!.fileName
+                val onFileLocation = fileLocation
+                val onFileName = fileName
                 val onFileTarget = File(onFileLocation + File.separator + onFileName)
                 val fileOutputStream = FileOutputStream(onFileTarget)
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
@@ -178,9 +179,9 @@ class ScreenshotService : Service() {
             buffer.clear()
             bitmap.recycle()
             image.close()
-            outerClass.get()!!.createListenerTrigger()
-            outerClass.get()!!.createFileBroadcast()
-            outerClass.get()!!.createFinishToast()
+            createListenerTrigger()
+            createFileBroadcast()
+            createFinishToast()
         }
     }
 

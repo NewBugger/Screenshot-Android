@@ -159,7 +159,7 @@ class ScreenshotActivity : Activity() {
     private fun createOverListeners() {
         createTransferValues()
         screenshotService.createImageListener()
-        mMediaProjection.registerCallback(MediaProjectionStopCallback(WeakReference(this)), mHandler)  // register media projection stop callback
+        mMediaProjection.registerCallback(MediaProjectionStopCallback(), mHandler)  // register media projection stop callback
         mStopProjectionEventListener = ScreenshotService.StopProjectionEventListener()
         mStopProjectionEventListener.setStopProjectionEventListener(object:
             ScreenshotService.StopProjectionEventListener.OnStopProjectionEventListener {
@@ -184,12 +184,12 @@ class ScreenshotActivity : Activity() {
         }
     }
 
-    private class MediaProjectionStopCallback(private val outerClass: WeakReference<ScreenshotActivity>) : MediaProjection.Callback() {
+    private inner class MediaProjectionStopCallback() : MediaProjection.Callback() {
         override fun onStop() {
-            outerClass.get()!!.mHandler.post {
-                outerClass.get()!!.mVirtualDisplay.release()
-                outerClass.get()!!.mImageReader.setOnImageAvailableListener(null, null)
-                outerClass.get()!!.mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
+            mHandler.post {
+                mVirtualDisplay.release()
+                mImageReader.setOnImageAvailableListener(null, null)
+                mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
             }
         }
     }
