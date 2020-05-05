@@ -38,7 +38,6 @@ import androidx.preference.PreferenceManager
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
-import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import kotlin.properties.Delegates
 
