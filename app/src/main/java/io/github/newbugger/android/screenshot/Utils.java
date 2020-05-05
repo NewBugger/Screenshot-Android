@@ -27,10 +27,15 @@ public final class Utils {
         int offset = 0;
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                colorR = buffer.get(offset) & 0xff << 16;     // R
+                /* colorR = buffer.get(offset) & 0xff << 16;     // R
                 colorG = buffer.get(offset + 1) & 0xff << 8;  // G
                 colorB = buffer.get(offset + 2) & 0xff;       // B
-                colorA = buffer.get(offset + 3) & 0xff << 24; // A
+                colorA = buffer.get(offset + 3) & 0xff << 24; // A */
+                // separately get ARGB pixels, while do not need a shift
+                colorR = buffer.get(offset) & 0xff;     // R
+                colorG = buffer.get(offset + 1) & 0xff; // G
+                colorB = buffer.get(offset + 2) & 0xff; // B
+                colorA = buffer.get(offset + 3) & 0xff; // A
                 colorT = Color.argb(colorA, colorR, colorG, colorB);
                 bitmap.setPixel(j, i, colorT);
                 offset += pixelStride;
