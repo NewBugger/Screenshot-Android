@@ -154,16 +154,21 @@ class ScreenshotService : Service() {
             PixelFormat.RGBA_8888,
             1
         )
-        mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-            "screenshot",
-            mViewWidth,
-            mViewHeight,
-            mDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-            mImageReader.surface,
-            null,
-            mHandler
-        )
+        val delay = preferences.getString("delay", "1000")!!.toLong()
+        mHandler.postDelayed({
+            // https://stackoverflow.com/a/54352394
+            mVirtualDisplay = mMediaProjection.createVirtualDisplay(
+                "screenshot",
+                mViewWidth,
+                mViewHeight,
+                mDensity,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+                mImageReader.surface,
+                null,
+                null  // mHandler
+            )
+            // TODO: replaced the method of time wait
+        }, delay)
     }
 
     private fun createWorkListeners() {
@@ -177,14 +182,10 @@ class ScreenshotService : Service() {
     private fun createWorkerTasks() {
         getPreferences()
         getFiles()
-        val delay = preferences.getString("delay", "1000")!!.toLong()
         createObjectThread()
         createViewValues()
-        mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
-            createVirtualDisplay()
-            createWorkListeners()
-        // TODO: replaced the method of time wait
-        }, delay)
+        createVirtualDisplay()
+        createWorkListeners()
     }
 
     private fun stopProjection() {
