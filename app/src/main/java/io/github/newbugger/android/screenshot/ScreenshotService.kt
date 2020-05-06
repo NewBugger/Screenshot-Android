@@ -77,7 +77,7 @@ class ScreenshotService : Service() {
 
     private var getSAFPreference by Delegates.notNull<Boolean>()
 
-    private fun getSAFPreference() {
+    private fun getPreferences() {
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
         getSAFPreference = preferences.getBoolean("saf", true)
     }
@@ -87,8 +87,7 @@ class ScreenshotService : Service() {
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
         if (getSAFPreference) {
-            val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-            val dir = preferences.getString("directory", null).toString()
+            val dir = preferences.getString("directory", "null")!!
             val uri = Uri.parse(dir)
             val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, uri)!!
             val newDocumentFile = documentFile.createFile("image/png", fileName)!!
@@ -146,8 +145,6 @@ class ScreenshotService : Service() {
         mViewHeight = size.y
         /* } */
         mDensity = mDisplayMetrics.densityDpi
-        getSAFPreference()
-        getFiles()
     }
 
     private fun createVirtualDisplay() {
@@ -178,13 +175,16 @@ class ScreenshotService : Service() {
     }
 
     private fun createWorkerTasks() {
+        getPreferences()
+        getFiles()
+        val delay = preferences.getString("delay", "1000")!!.toLong()
         createObjectThread()
         createViewValues()
         mHandler.postDelayed({  // https://stackoverflow.com/a/54352394
             createVirtualDisplay()
             createWorkListeners()
         // TODO: replaced the method of time wait
-        }, 3000)  // 5000ms == 5s}
+        }, delay)
     }
 
     private fun stopProjection() {

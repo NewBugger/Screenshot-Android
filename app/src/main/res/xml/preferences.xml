@@ -29,6 +29,14 @@
             android:summaryOn="@string/pixel_summary_on"
             android:summaryOff="@string/pixel_summary_off" />
 
+        <EditTextPreference
+            android:key="delay"
+            android:defaultValue="1000"
+            android:title="@string/delay_title"
+            android:singleLine="true"
+            android:dialogTitle="@string/delay_tip"
+            android:summary="@string/delay_summary"/>
+
     </PreferenceCategory>
 
 </PreferenceScreen>

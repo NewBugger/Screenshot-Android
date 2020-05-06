@@ -11,14 +11,43 @@ package io.github.newbugger.android.screenshot
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
 
 
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : PreferenceFragmentCompat(),
+    SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var sharedPreferences: SharedPreferences
+
+    private fun setSwitch(preference: SwitchPreference) {
+        val key = preference.key
+        preference.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+            val checked = java.lang.Boolean.valueOf(value.toString())
+            if (checked) {
+                sharedPreferences.edit().putBoolean(key, true).apply()
+                true
+            } else {
+                sharedPreferences.edit().putBoolean(key, false).apply()
+                true
+            }
+        }
+    }
+
+    private fun setEditText(preference: EditTextPreference) {
+        val text = preference.text  // never be null
+        preference.summary = "$text ms"  // set View
+    }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
+        when (val preference: Preference = findPreference(key)!!) {
+            is SwitchPreference -> setSwitch(preference)
+            is EditTextPreference -> setEditText(preference)
+            else -> return
+        }
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
@@ -27,28 +56,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sharedPreferences = preferenceManager.sharedPreferences
-        val saf: SwitchPreference = findPreference("saf")!!
-        saf.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
-            val checked = java.lang.Boolean.valueOf(value.toString())
-            if (checked) {
-                sharedPreferences.edit().putBoolean("saf", true).apply()
-                true
-            } else {
-                sharedPreferences.edit().putBoolean("saf", false).apply()
-                true
-            }
-        }
-        val setPixel: SwitchPreference = findPreference("setPixel")!!
-        setPixel.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
-            val checked = java.lang.Boolean.valueOf(value.toString())
-            if (checked) {
-                sharedPreferences.edit().putBoolean("setPixel", true).apply()
-                true
-            } else {
-                sharedPreferences.edit().putBoolean("setPixel", false).apply()
-                true
-            }
-        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
     }
 
 }

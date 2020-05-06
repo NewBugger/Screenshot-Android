@@ -2,11 +2,14 @@
     <string name="app_name">Screenshot</string>
     <string name="notification_button">start</string>
     <string name="settings_header">Settings</string>
-    <string name="stopper_title">Stop Service</string>
+    <string name="stopper_title">Stop</string>
     <string name="saf_title">SAF</string>
     <string name="saf_summary_on">use Storage Access Framework (forced on Android 10=+)</string>
     <string name="saf_summary_off">use External Storage permission (available on only Android 10-)</string>
-    <string name="pixel_title">bitmap.setPixel</string>
+    <string name="pixel_title">setPixel</string>
     <string name="pixel_summary_on">use bitmap.setPixel() to generate pixels</string>
     <string name="pixel_summary_off">use bitmap.copyPixelsFromBuffer() to generate pixels</string>
+    <string name="delay_title">Time Delay</string>
+    <string name="delay_tip">set capturing delay time (1000ms == 1s)</string>
+    <string name="delay_summary">set delay time (ms)</string>
 </resources>
