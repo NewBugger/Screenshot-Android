@@ -10,21 +10,22 @@
 package io.github.newbugger.android.screenshot
 
 import android.content.SharedPreferences
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Bundle
 import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.Preference
+import androidx.preference.Preference.OnPreferenceChangeListener
 import androidx.preference.SwitchPreference
 
 
-class SettingsFragment : PreferenceFragmentCompat(),
-    SharedPreferences.OnSharedPreferenceChangeListener {
+class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeListener {
 
     private lateinit var sharedPreferences: SharedPreferences
 
     private fun setSwitch(preference: SwitchPreference) {
         val key = preference.key
-        preference.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+        preference.onPreferenceChangeListener = OnPreferenceChangeListener { _, value ->
             val checked = java.lang.Boolean.valueOf(value.toString())
             if (checked) {
                 sharedPreferences.edit().putBoolean(key, true).apply()
