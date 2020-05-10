@@ -41,12 +41,17 @@ class SettingsFragment : PreferenceFragmentCompat(),
         preference.summary = "$text ms"  // set View
     }
 
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
-        when (val preference: Preference = findPreference(key)!!) {
+    private fun setSummary(preference: Preference) {
+        when (preference) {
             is SwitchPreference -> setSwitch(preference)
             is EditTextPreference -> setEditText(preference)
             else -> return
         }
+    }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
+        val preference: Preference = findPreference(key)!!
+        setSummary(preference)  // smart cast
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
