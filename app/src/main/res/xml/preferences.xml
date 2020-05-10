@@ -8,24 +8,23 @@
   -->
 
 <PreferenceScreen
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_height="match_parent"
     android:layout_width="match_parent">
 
-    <PreferenceCategory app:title="@string/settings_header">
+    <PreferenceCategory android:title="@string/settings_header">
 
         <SwitchPreference
-            app:key="saf"
+            android:key="saf"
             android:defaultValue="true"
-            app:title="@string/saf_title"
+            android:title="@string/saf_title"
             android:summaryOn="@string/saf_summary_on"
             android:summaryOff="@string/saf_summary_off"/>
 
         <SwitchPreference
-            app:key="setPixel"
+            android:key="setPixel"
             android:defaultValue="true"
-            app:title="@string/pixel_title"
+            android:title="@string/pixel_title"
             android:summaryOn="@string/pixel_summary_on"
             android:summaryOff="@string/pixel_summary_off" />
 
