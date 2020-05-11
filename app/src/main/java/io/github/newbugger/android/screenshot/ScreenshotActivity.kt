@@ -87,14 +87,13 @@ class ScreenshotActivity : Activity() {
         super.onStart()
         if (!screenshotBound) Intent(this, ScreenshotService::class.java).also { intent ->
             bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
+            screenshotBound = true
         }  // bind to the Service
-        screenshotBound = true
     }
 
     override fun onStop() {
         super.onStop()
         if (screenshotBound) unbindService(screenshotConnection)
-        screenshotBound = false
     }
 
     /* override fun onResume() {
