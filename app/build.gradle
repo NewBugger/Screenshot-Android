@@ -23,7 +23,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 29  // get storage_root_dir is deprecated
         versionCode 1
-        versionName "1.0.3.8"
+        versionName "1.0.3.9"
     }
 
     buildTypes {
@@ -40,7 +40,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.core:core-ktx:1.2.0'
     implementation 'androidx.preference:preference:1.1.1'
-    testImplementation 'junit:junit:4.13'
 
     // https://developer.android.com/reference/kotlin/androidx/preference/package-summary
     implementation 'androidx.preference:preference-ktx:1.1.1'
