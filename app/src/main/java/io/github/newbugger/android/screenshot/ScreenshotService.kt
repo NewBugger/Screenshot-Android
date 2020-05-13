@@ -154,8 +154,7 @@ class ScreenshotService : Service() {
             PixelFormat.RGBA_8888,
             1
         )
-        val delay = preferences.getString("delay", "1000")!!.toLong()
-        mHandler.postDelayed({
+
             // https://stackoverflow.com/a/54352394
             mVirtualDisplay = mMediaProjection.createVirtualDisplay(
                 "screenshot",
@@ -167,16 +166,14 @@ class ScreenshotService : Service() {
                 null,
                 null  // mHandler
             )
-            // TODO: replaced the method of time wait
-        }, delay)
     }
 
     private fun createWorkListeners() {
         mImageReader.setOnImageAvailableListener(
             ImageAvailableListener(),
-            mHandler
+            null  // mHandler
         )
-        mMediaProjection.registerCallback(MediaProjectionStopCallback(), mHandler)  // register media projection stop callback
+        mMediaProjection.registerCallback(MediaProjectionStopCallback(), null)  // register media projection stop callback
     }
 
     private fun createWorkerTasks() {
@@ -184,25 +181,29 @@ class ScreenshotService : Service() {
         getFiles()
         createObjectThread()
         createViewValues()
-        createVirtualDisplay()
-        createWorkListeners()
-        createFileBroadcast()
-        createFinishToast()
+        val delay = preferences.getString("delay", "1000")!!.toLong()
+        mHandler.postDelayed({
+            createVirtualDisplay()
+            createWorkListeners()
+            createFileBroadcast()
+            createFinishToast()
+            // TODO: replaced the method of time wait
+        }, delay)
     }
 
     private fun stopProjection() {
-        mHandler.post {  // after image saved, stop MediaFunction intent
+        // mHandler.post {  // after image saved, stop MediaFunction intent
             mMediaProjection.stop()
-        }
+        // }
     }
 
     private inner class MediaProjectionStopCallback : MediaProjection.Callback() {
         override fun onStop() {
-            mHandler.post {
+            // mHandler.post {
                 mVirtualDisplay.release()
                 mImageReader.setOnImageAvailableListener(null, null)
                 mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
-            }
+            // }
         }
     }
 
