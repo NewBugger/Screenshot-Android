@@ -186,13 +186,13 @@ class ScreenshotService : Service() {
         createViewValues()
         createVirtualDisplay()
         createWorkListeners()
+        createFileBroadcast()
+        createFinishToast()
     }
 
     private fun stopProjection() {
         mHandler.post {  // after image saved, stop MediaFunction intent
             mMediaProjection.stop()
-            createFileBroadcast()
-            createFinishToast()
         }
     }
 
