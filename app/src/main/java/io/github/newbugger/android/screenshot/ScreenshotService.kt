@@ -154,18 +154,17 @@ class ScreenshotService : Service() {
             PixelFormat.RGBA_8888,
             1
         )
-
-            // https://stackoverflow.com/a/54352394
-            mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-                "screenshot",
-                mViewWidth,
-                mViewHeight,
-                mDensity,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-                mImageReader.surface,
-                null,
-                null  // mHandler
-            )
+        // https://stackoverflow.com/a/54352394
+        mVirtualDisplay = mMediaProjection.createVirtualDisplay(
+            "screenshot",
+            mViewWidth,
+            mViewHeight,
+            mDensity,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+            mImageReader.surface,
+            null,
+            null  // mHandler
+        )
     }
 
     private fun createWorkListeners() {
