@@ -10,14 +10,14 @@
 package io.github.newbugger.android.screenshot
 
 import android.app.Activity
-// import android.content.ComponentName
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-// import android.content.ServiceConnection
+import android.content.ServiceConnection
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
-// import android.os.IBinder
+import android.os.IBinder
 import android.util.DisplayMetrics
 import android.view.WindowManager
 
@@ -32,8 +32,8 @@ class ScreenshotActivity : Activity() {
     lateinit var mWindowManager: WindowManager
 
     // Service Binder
-    /* private lateinit var screenshotService: ScreenshotService
-    private var screenshotBound: Boolean = false */
+    private lateinit var screenshotService: ScreenshotService
+    private var screenshotBound: Boolean = false
 
     private fun startProjection() {
         startActivityForResult(  // request Projection allowed with each tap
@@ -42,7 +42,7 @@ class ScreenshotActivity : Activity() {
         )
     }
 
-    /* private val screenshotConnection = object : ServiceConnection {
+    private val screenshotConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, binderName: IBinder) {
             val binder = binderName as ScreenshotService.ServiceBinder
             screenshotService = binder.service  // mService = binder.getService()
@@ -51,7 +51,7 @@ class ScreenshotActivity : Activity() {
         override fun onServiceDisconnected(name: ComponentName) {
             screenshotBound = false
         }
-    } */
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -83,7 +83,7 @@ class ScreenshotActivity : Activity() {
     }
 
     // https://developer.android.com/guide/components/bound-services.html#kotlin
-    /* override fun onStart() {
+    override fun onStart() {
         super.onStart()
         if (!screenshotBound) Intent(this, ScreenshotService::class.java).also { intent ->
             bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
@@ -94,7 +94,7 @@ class ScreenshotActivity : Activity() {
     override fun onStop() {
         super.onStop()
         if (screenshotBound) unbindService(screenshotConnection)
-    } */
+    }
 
     /* override fun onResume() {
         super.onResume()

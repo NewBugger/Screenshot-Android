@@ -29,7 +29,7 @@ import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.net.Uri
-// import android.os.Binder
+import android.os.Binder
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -362,17 +362,12 @@ class ScreenshotService : Service() {
     }
 
     // https://developer.android.com/guide/components/bound-services.html#Binder
-    /* override fun onBind(intent: Intent): IBinder {
+    override fun onBind(intent: Intent): IBinder {
         return ServiceBinder()
     }
     internal inner class ServiceBinder : Binder() {
         val service: ScreenshotService
             get() = this@ScreenshotService
-    } */
-    // https://developer.android.com/guide/components/services#ExtendingService
-    override fun onBind(intent: Intent): IBinder? {
-        // We don't provide binding, so return null
-        return null
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
