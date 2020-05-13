@@ -184,10 +184,10 @@ class ScreenshotService : Service() {
         mHandler.postDelayed({
             createVirtualDisplay()
             createWorkListeners()
-            createFileBroadcast()
-            createFinishToast()
             // TODO: replaced the method of time wait
         }, delay)
+        createFileBroadcast()
+        createFinishToast()
     }
 
     private fun stopProjection() {
