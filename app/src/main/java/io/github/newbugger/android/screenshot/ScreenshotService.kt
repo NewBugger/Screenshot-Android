@@ -191,6 +191,8 @@ class ScreenshotService : Service() {
     private fun stopProjection() {
         mHandler.post {  // after image saved, stop MediaFunction intent
             mMediaProjection.stop()
+            createFileBroadcast()
+            createFinishToast()
         }
     }
 
@@ -209,7 +211,6 @@ class ScreenshotService : Service() {
         override fun onImageAvailable(reader: ImageReader) {
             val onViewWidth = mViewWidth
             val onViewHeight = mViewHeight
-            createWaitingToast()
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
@@ -252,8 +253,6 @@ class ScreenshotService : Service() {
             bitmap.recycle()
             image.close()
             stopProjection()
-            createFileBroadcast()
-            createFinishToast()
         }
     }
 
@@ -281,11 +280,6 @@ class ScreenshotService : Service() {
                 sendBroadcast(mediaScanIntent)
             }
         }
-    }
-
-    private fun createWaitingToast() {
-        // TODO: bug on this toast -> the toast shows too many times
-        Toast.makeText(this, "Capturing start ..", Toast.LENGTH_LONG).show()
     }
 
     private fun createFinishToast() {
