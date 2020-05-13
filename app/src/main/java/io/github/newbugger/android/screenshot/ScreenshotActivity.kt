@@ -26,10 +26,10 @@ class ScreenshotActivity : Activity() {
 
     private val projectionRequestCode = 1000
 
-    private lateinit var mMediaProjection: MediaProjection
+    lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
-    private lateinit var mDisplayMetrics: DisplayMetrics
-    private lateinit var mWindowManager: WindowManager
+    lateinit var mDisplayMetrics: DisplayMetrics
+    lateinit var mWindowManager: WindowManager
 
     // Service Binder
     /* private lateinit var screenshotService: ScreenshotService
@@ -68,7 +68,7 @@ class ScreenshotActivity : Activity() {
                     mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
                     mWindowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
                     mDisplayMetrics = applicationContext.resources.displayMetrics
-                    screenshotService.createMediaValues(mMediaProjection, mWindowManager, mDisplayMetrics)
+                    // screenshotService.createMediaValues(mMediaProjection, mWindowManager, mDisplayMetrics)
                     ScreenshotService.startCapture(this, "capture")
                 }
                 else -> return

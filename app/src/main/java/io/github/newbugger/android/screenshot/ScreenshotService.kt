@@ -118,12 +118,11 @@ class ScreenshotService : Service() {
         }.start()
     }
 
-    fun createMediaValues(tMediaProjection: MediaProjection,
-                          tWindowManager: WindowManager,
-                          tDisplayMetrics: DisplayMetrics) {
-        mMediaProjection = tMediaProjection
-        mWindowManager = tWindowManager
-        mDisplayMetrics = tDisplayMetrics
+    private fun createMediaValues() {
+        val activity = ScreenshotActivity()
+        mMediaProjection = activity.mMediaProjection
+        mWindowManager = activity.mWindowManager
+        mDisplayMetrics = activity.mDisplayMetrics
     }
 
     private fun createViewValues() {
@@ -182,6 +181,7 @@ class ScreenshotService : Service() {
     private fun createWorkerTasks() {
         getPreferences()
         getFiles()
+        createMediaValues()
         createObjectThread()
         createViewValues()
         createVirtualDisplay()
