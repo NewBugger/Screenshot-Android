@@ -118,12 +118,10 @@ class ScreenshotService : Service() {
         }.start()
     }
 
-    fun createMediaValues(tMediaProjection: MediaProjection,
-                          tWindowManager: WindowManager,
-                          tDisplayMetrics: DisplayMetrics) {
+    fun createMediaValues(tMediaProjection: MediaProjection) {
         mMediaProjection = tMediaProjection
-        mWindowManager = tWindowManager
-        mDisplayMetrics = tDisplayMetrics
+        mWindowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        mDisplayMetrics = applicationContext.resources.displayMetrics
     }
 
     private fun createViewValues() {

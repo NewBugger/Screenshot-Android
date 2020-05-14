@@ -59,9 +59,7 @@ class ScreenshotActivity : Activity() {
                     Toast.makeText(this, "screenshotService binder is found.", Toast.LENGTH_LONG).show()
                     mMediaProjection = screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data) */
                     mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
-                    mWindowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                    mDisplayMetrics = applicationContext.resources.displayMetrics
-                    screenshotService.createMediaValues(mMediaProjection, mWindowManager, mDisplayMetrics)
+                    screenshotService.createMediaValues(mMediaProjection)
                     ScreenshotService.startCapture(this, "capture")
                 }
                 else -> return
