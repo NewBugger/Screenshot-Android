@@ -52,8 +52,9 @@ class ScreenshotActivity : Activity() {
                         Toast.makeText(this, "wait for screenshotService binder ..", Toast.LENGTH_LONG).show()
                         return
                     }
-                    Toast.makeText(this, "screenshotService binder is found.", Toast.LENGTH_LONG).show()
-                    mMediaProjection = screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data) */
+                    mMediaProjection =
+                        screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data)
+                    */
                     mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
                     screenshotService.createMediaValues(mMediaProjection)
                     ScreenshotService.startCapture(this, "capture")
@@ -65,7 +66,8 @@ class ScreenshotActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mMediaProjectionManager = applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        mMediaProjectionManager =
+            applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         startActivityForResult(  // request Projection allowed with each tap
             mMediaProjectionManager.createScreenCaptureIntent(),
             projectionRequestCode
