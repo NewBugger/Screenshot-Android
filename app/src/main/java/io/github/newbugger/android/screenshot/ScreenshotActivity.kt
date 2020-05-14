@@ -85,9 +85,8 @@ class ScreenshotActivity : Activity() {
     // https://developer.android.com/guide/components/bound-services.html#kotlin
     override fun onStart() {
         super.onStart()
-        if (!screenshotBound) Intent(this, ScreenshotService::class.java).also { intent ->
+        Intent(this, ScreenshotService::class.java).also { intent ->
             bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
-            screenshotBound = true
         }  // bind to the Service
     }
 
@@ -95,23 +94,6 @@ class ScreenshotActivity : Activity() {
         super.onStop()
         if (screenshotBound) unbindService(screenshotConnection)
     }
-
-    /* override fun onResume() {
-        super.onResume()
-        if (screenshotService == null) Intent(this, ScreenshotService::class.java).also { intent ->
-            bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
-        }  // bind to the Service
-    }
-
-    override fun onPause() {
-        if (screenshotService != null) unbindService(screenshotConnection)
-        super.onPause()
-    }
-
-    override fun onDestroy() {
-        if (screenshotService != null) unbindService(screenshotConnection)
-        super.onDestroy()
-    } */
 
 }
 
