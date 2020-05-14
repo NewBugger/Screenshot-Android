@@ -43,6 +43,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.handleCoroutineException
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -151,24 +152,28 @@ class ScreenshotService : Service() {
             PixelFormat.RGBA_8888,
             1
         )
-        // https://stackoverflow.com/a/54352394
-        mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-            "screenshot",
-            mViewWidth,
-            mViewHeight,
-            mDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-            mImageReader.surface,
-            null,
-            null  // mHandler
-        )
+        val delay = preferences.getString("delay", "1000")!!.toLong()
+        mHandler.postDelayed({
+            // https://stackoverflow.com/a/54352394
+            mVirtualDisplay = mMediaProjection.createVirtualDisplay(
+                "screenshot",
+                mViewWidth,
+                mViewHeight,
+                mDensity,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
+                        DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+                mImageReader.surface,
+                null,
+                null
+            )
+            // TODO: replaced the method of time wait
+        }, delay)
     }
 
     private fun createWorkListeners() {
         mImageReader.setOnImageAvailableListener(
             ImageAvailableListener(),
-            null  // mHandler
+            mHandler
         )
         mMediaProjection.registerCallback(MediaProjectionStopCallback(), null)
         // register media projection stop callback
@@ -179,29 +184,23 @@ class ScreenshotService : Service() {
         getFiles()
         createObjectThread()
         createViewValues()
-        val delay = preferences.getString("delay", "1000")!!.toLong()
-        mHandler.postDelayed({
-            createVirtualDisplay()
-            createWorkListeners()
-            // TODO: replaced the method of time wait
-        }, delay)
-        createFileBroadcast()
-        createFinishToast()
+        createVirtualDisplay()
+        createWorkListeners()
     }
 
     private fun stopProjection() {
-        // mHandler.post {  // after image saved, stop MediaFunction intent
+        mHandler.post {  // after image saved, stop MediaFunction intent
             mMediaProjection.stop()
-        // }
+        }
     }
 
     private inner class MediaProjectionStopCallback : MediaProjection.Callback() {
         override fun onStop() {
-            // mHandler.post {
+            mHandler.post {
                 mVirtualDisplay.release()
                 mImageReader.setOnImageAvailableListener(null, null)
                 mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
-            // }
+            }
         }
     }
 
@@ -251,6 +250,8 @@ class ScreenshotService : Service() {
             bitmap.recycle()
             image.close()
             stopProjection()
+            createFinishToast()
+            createFileBroadcast()
         }
     }
 
