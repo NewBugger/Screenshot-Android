@@ -18,8 +18,6 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
 import android.os.IBinder
-import android.util.DisplayMetrics
-import android.view.WindowManager
 
 
 class ScreenshotActivity : Activity() {
@@ -28,8 +26,6 @@ class ScreenshotActivity : Activity() {
 
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
-    private lateinit var mDisplayMetrics: DisplayMetrics
-    private lateinit var mWindowManager: WindowManager
 
     // Service Binder
     private lateinit var screenshotService: ScreenshotService
