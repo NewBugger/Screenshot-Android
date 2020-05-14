@@ -35,13 +35,6 @@ class ScreenshotActivity : Activity() {
     private lateinit var screenshotService: ScreenshotService
     private var screenshotBound: Boolean = false
 
-    private fun startProjection() {
-        startActivityForResult(  // request Projection allowed with each tap
-            mMediaProjectionManager.createScreenCaptureIntent(),
-            projectionRequestCode
-        )
-    }
-
     private val screenshotConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, binderName: IBinder) {
             val binder = binderName as ScreenshotService.ServiceBinder
@@ -79,7 +72,10 @@ class ScreenshotActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mMediaProjectionManager = applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        startProjection() // default start capture, so opener is needed
+        startActivityForResult(  // request Projection allowed with each tap
+            mMediaProjectionManager.createScreenCaptureIntent(),
+            projectionRequestCode
+        )
     }
 
     // https://developer.android.com/guide/components/bound-services.html#kotlin
