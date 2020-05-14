@@ -43,7 +43,6 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.handleCoroutineException
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -118,8 +117,10 @@ class ScreenshotService : Service() {
 
     fun createMediaValues(tMediaProjection: MediaProjection) {
         mMediaProjection = tMediaProjection
-        mWindowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        mDisplayMetrics = applicationContext.resources.displayMetrics
+        applicationContext.also { context->
+            mWindowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            mDisplayMetrics = context.resources.displayMetrics
+        }
     }
 
     private fun createViewValues() {
@@ -233,18 +234,20 @@ class ScreenshotService : Service() {
             }
             if (getSAFPreference) {
                 // https://stackoverflow.com/a/49998139
-                val fileOutputStream: OutputStream = contentResolver.openOutputStream(fileNewDocument, "rw")!!
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-                fileOutputStream.flush()
-                fileOutputStream.close()
+                contentResolver.openOutputStream(fileNewDocument, "rw")!!.also { fileOutputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                    fileOutputStream.flush()
+                    fileOutputStream.close()
+                }
             } else {
                 val onFileLocation = fileLocation
                 val onFileName = fileName
                 val onFileTarget = File(onFileLocation + File.separator + onFileName)
-                val fileOutputStream = FileOutputStream(onFileTarget)
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-                fileOutputStream.flush()
-                fileOutputStream.close()
+                FileOutputStream(onFileTarget).also { fileOutputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                    fileOutputStream.flush()
+                    fileOutputStream.close()
+                }
             }
             buffer.clear()
             bitmap.recycle()
