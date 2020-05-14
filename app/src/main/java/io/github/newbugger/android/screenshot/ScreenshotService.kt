@@ -54,11 +54,6 @@ import kotlin.properties.Delegates
 
 class ScreenshotService : Service() {
 
-    // prepare a method for clients ScreenshotActivity
-    /* fun createMediaProjection(mMediaProjectionManager: MediaProjectionManager, resultCode: Int, data: Intent): MediaProjection {
-        return mMediaProjectionManager.getMediaProjection(resultCode, data)
-    } */
-
     private lateinit var fileLocation: String
     private lateinit var fileName: String
     private lateinit var fileNewDocument: Uri
@@ -93,7 +88,9 @@ class ScreenshotService : Service() {
             val newDocumentFile = documentFile.createFile("image/png", fileName)!!
             fileNewDocument = newDocumentFile.uri
         } else {
-            fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
+            fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() +
+                    File.separator +
+                    "Screenshot"
         }
     }
 
@@ -128,7 +125,8 @@ class ScreenshotService : Service() {
         // TODO: full Android 11 (R) support
         // Android 10 cannot install app include Android 11 apis
         /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // https://developer.android.com/reference/android/view/Display#getSize(android.graphics.Point)
+            // https://developer.android.com/reference/android/view/Display
+            // #getSize(android.graphics.Point)
             // https://developer.android.com/reference/android/view/WindowManager#getCurrentWindowMetrics()
             // https://developer.android.com/reference/android/view/WindowMetrics#getSize()
             mViewWidth = mWindowManager.currentWindowMetrics.size.width
@@ -137,10 +135,11 @@ class ScreenshotService : Service() {
         // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
         // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
         val mDisplay = mWindowManager.defaultDisplay
-        val size = Point()
-        mDisplay.getRealSize(size)
-        mViewWidth = size.x
-        mViewHeight = size.y
+        Point().also { size ->
+            mDisplay.getRealSize(size)
+            mViewWidth = size.x
+            mViewHeight = size.y
+        }
         /* } */
         mDensity = mDisplayMetrics.densityDpi
     }
@@ -158,7 +157,8 @@ class ScreenshotService : Service() {
             mViewWidth,
             mViewHeight,
             mDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
             mImageReader.surface,
             null,
             null  // mHandler
@@ -170,7 +170,8 @@ class ScreenshotService : Service() {
             ImageAvailableListener(),
             null  // mHandler
         )
-        mMediaProjection.registerCallback(MediaProjectionStopCallback(), null)  // register media projection stop callback
+        mMediaProjection.registerCallback(MediaProjectionStopCallback(), null)
+        // register media projection stop callback
     }
 
     private fun createWorkerTasks() {
@@ -212,7 +213,7 @@ class ScreenshotService : Service() {
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
-            val bitmap = Bitmap.createBitmap(  // https://developer.android.com/reference/android/graphics/Bitmap#createBitmap(android.util.DisplayMetrics,%20int,%20int,%20android.graphics.Bitmap.Config,%20boolean)
+            val bitmap = Bitmap.createBitmap(
                     mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
                     onViewWidth,
                     onViewHeight,
@@ -220,9 +221,9 @@ class ScreenshotService : Service() {
                     false
                 )
             if (preferences.getBoolean("setPixel", true)) {
-                // logcat:: I/Choreographer: Skipped 120 frames!  The application may be doing too much work on its main thread.
+                // logcat:: I/Choreographer: Skipped 120 frames!  The application may be doing
+                // too much work on its main thread.
                 // TODO: find a method more efficient
-                // https://stackoverflow.com/questions/26673127/android-imagereader-acquirelatestimage-returns-invalid-jpg
                 val pixelStride = planes[0].pixelStride
                 val rowStride = planes[0].rowStride
                 val rowPadding = rowStride - pixelStride * onViewWidth
@@ -233,7 +234,6 @@ class ScreenshotService : Service() {
             }
             if (getSAFPreference) {
                 // https://stackoverflow.com/a/49998139
-                // https://developer.android.com/reference/android/graphics/Bitmap#compress(android.graphics.Bitmap.CompressFormat,%20int,%20java.io.OutputStream)
                 val fileOutputStream: OutputStream = contentResolver.openOutputStream(fileNewDocument, "rw")!!
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                 fileOutputStream.flush()
@@ -257,12 +257,17 @@ class ScreenshotService : Service() {
     private fun createFileBroadcast() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // https://stackoverflow.com/a/59196277
-            // https://developer.android.com/reference/android/content/ContentResolver#insert(android.net.Uri,%20android.content.ContentValues)
-            val values = ContentValues(3)
-            values.put(MediaStore.Images.Media.TITLE, fileName)
-            // TODO: express "Screenshot" dir using SAF uri (1)
-            values.put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES.toString() + File.separator + "Screenshot")
-            values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            // https://developer.android.com/reference/android/content/ContentResolver
+            // #insert(android.net.Uri,%20android.content.ContentValues)
+            val values = ContentValues(3).apply {
+                put(MediaStore.Images.Media.TITLE, fileName)
+                // TODO: express "Screenshot" dir using SAF uri (1)
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    DIRECTORY_PICTURES.toString() + File.separator + "Screenshot"
+                )
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            }
             contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
         } else {
             // https://developer.android.com/training/camera/photobasics#TaskGallery
@@ -302,7 +307,8 @@ class ScreenshotService : Service() {
                         this,
                         0,
                         notificationPendingIntent,
-                        PendingIntent.FLAG_CANCEL_CURRENT  // the current one should be canceled before generating a new one
+                        PendingIntent.FLAG_CANCEL_CURRENT
+                        // the current one should be canceled before generating a new one
                     )
                 }
 
@@ -347,11 +353,15 @@ class ScreenshotService : Service() {
         notificationManager.createNotificationChannel(channel)
 
         // https://developer.android.com/guide/components/services#Foreground
-        // https://stackoverflow.com/questions/61276730/media-projections-require-a-foreground-service-of-type-serviceinfo-foreground-se
+        // https://stackoverflow.com/questions/61276730/media-projections-require-
+        // a-foreground-service-of-type-serviceinfo-foreground-se
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(notificationsNotificationId, notificationBuilder, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+            startForeground(notificationsNotificationId,
+                notificationBuilder,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
         } else {
-            startForeground(notificationsNotificationId, notificationBuilder)
+            startForeground(notificationsNotificationId,
+                notificationBuilder)
         }
     }
 
@@ -394,8 +404,9 @@ class ScreenshotService : Service() {
         }
 
         fun stop(context: Context) {
-            val intent = Intent(context, ScreenshotService::class.java)
-            context.stopService(intent)
+            Intent(context, ScreenshotService::class.java).also { intent ->
+                context.stopService(intent)
+            }
         }
     }
 

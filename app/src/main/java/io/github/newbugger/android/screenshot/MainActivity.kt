@@ -52,12 +52,15 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         // and use DIRECTORY_PICTURES constant for better experience
         // via: https://developer.android.com/reference/android/os/Environment.html#getExternalStorageDirectory()
         // and: https://developer.android.com/reference/android/os/Environment.html#DIRECTORY_PICTURES
-        val fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() + File.separator + "Screenshot"
+        val fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() +
+                File.separator +
+                "Screenshot"
         val fileFile = File(fileLocation)
         if (!fileFile.exists()) fileFile.mkdirs()
     }
 
-    // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/java/com/example/android/ktfiles/MainActivity.kt
+    // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/
+    // java/com/example/android/ktfiles/MainActivity.kt
     // https://developer.android.com/training/data-storage/shared/documents-files#grant-access-directory
     private fun setDocumentAccess() {
         if (preferences.getString("directory", null) != null) return
@@ -129,20 +132,5 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         if (item.itemId == R.id.action_stopper) stopForeService()
         return false
     }
-
-    /* override fun onResume() {
-        startForeService()
-        super.onResume()
-    }
-
-    override fun onPause() {
-        stopForeService()
-        super.onPause()
-    }
-
-    override fun onDestroy() {
-        stopForeService()
-        super.onDestroy()
-    } */
 
 }
