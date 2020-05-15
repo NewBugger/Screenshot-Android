@@ -31,6 +31,7 @@ import android.media.projection.MediaProjection
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
+import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
@@ -236,9 +237,10 @@ class ScreenshotService : Service() {
             // https://stackoverflow.com/a/59196277
             // https://developer.android.com/reference/android/content/ContentResolver
             // #insert(android.net.Uri,%20android.content.ContentValues)
-            val values = ContentValues(2).apply {
+            val values = ContentValues(3).apply {
                 put(MediaStore.Images.Media.TITLE, fileName)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES)
             }
             contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
         } else {
