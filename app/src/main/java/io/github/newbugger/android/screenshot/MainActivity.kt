@@ -11,6 +11,7 @@ package io.github.newbugger.android.screenshot
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
 import android.provider.DocumentsContract.EXTRA_INITIAL_URI
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
     // java/com/example/android/ktfiles/MainActivity.kt
     // https://developer.android.com/training/data-storage/shared/documents-files#grant-access-directory
     private fun setDocumentAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return
         if (preferences.getString("directory", null) != null) return
         Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
         Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also { intent ->

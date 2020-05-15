@@ -73,10 +73,30 @@ class ScreenshotService : Service() {
     private fun getFiles() {  // regenerate filename
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
-        val dir = preferences.getString("directory", "null")!!
-        val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, Uri.parse(dir))!!
-        val newDocumentFile = documentFile.createFile("image/png", fileName)!!
-        fileDocument = newDocumentFile.uri
+        fileDocument = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // https://stackoverflow.com/a/59196277
+            // https://developer.android.com/reference/android/content/ContentResolver
+            ContentValues(3)
+                .apply {
+                    put(MediaStore.Images.Media.TITLE, fileName)
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "$DIRECTORY_PICTURES/Screenshot")
+                }
+                .let {
+                    contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
+                }
+        } else {
+            preferences.getString("directory", "null")!!
+                .let {
+                    Uri.parse(it)
+                }
+                .let {
+                    DocumentFile.fromTreeUri(this, it)!!
+                }
+                .let {
+                    it.createFile("image/png", fileName)!!
+                }.uri
+        }
     }
 
     private fun createObjectThread() {
@@ -228,27 +248,6 @@ class ScreenshotService : Service() {
             image.close()
             stopProjection()
             createFinishToast()
-            createFileBroadcast()
-        }
-    }
-
-    private fun createFileBroadcast() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // https://stackoverflow.com/a/59196277
-            // https://developer.android.com/reference/android/content/ContentResolver
-            // #insert(android.net.Uri,%20android.content.ContentValues)
-            val values = ContentValues(3).apply {
-                put(MediaStore.Images.Media.TITLE, fileName)
-                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(MediaStore.Images.Media.RELATIVE_PATH, "$DIRECTORY_PICTURES/Screenshot")
-            }
-            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        } else {
-            // https://developer.android.com/training/camera/photobasics#TaskGallery
-            Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
-                mediaScanIntent.data = fileDocument
-                sendBroadcast(mediaScanIntent)
-            }
         }
     }
 
