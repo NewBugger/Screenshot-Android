@@ -15,13 +15,6 @@
     <PreferenceCategory android:title="@string/settings_header">
 
         <SwitchPreference
-            android:key="saf"
-            android:defaultValue="true"
-            android:title="@string/saf_title"
-            android:summaryOn="@string/saf_summary_on"
-            android:summaryOff="@string/saf_summary_off"/>
-
-        <SwitchPreference
             android:key="setPixel"
             android:defaultValue="true"
             android:title="@string/pixel_title"

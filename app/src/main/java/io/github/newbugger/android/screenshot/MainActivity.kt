@@ -9,12 +9,10 @@
 
 package io.github.newbugger.android.screenshot
 
-import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
-import android.os.Environment.getExternalStoragePublicDirectory
 import android.provider.DocumentsContract.EXTRA_INITIAL_URI
 import android.view.Menu
 import android.view.MenuItem
@@ -22,11 +20,7 @@ import android.widget.Toast
 // import android.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
 import androidx.preference.PreferenceManager
-import java.io.File
 
 
 class MainActivity : AppCompatActivity() {  // temporarily a fake and null activity
@@ -34,30 +28,6 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
     private val documentRequestCode = 1001
 
     private lateinit var preferences: SharedPreferences
-
-    private fun setStorageAccess() {
-        val requestCode = 232
-        val permissions = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-        for (permission in permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission) != PermissionChecker.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Storage Permission requested.", Toast.LENGTH_LONG).show()
-                ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
-            }
-        }
-        // while System Screenshot dir is in /Screenshots
-        // use target 28 to temporarily access external storage
-        // and use DIRECTORY_PICTURES constant for better experience
-        // via: https://developer.android.com/reference/android/os/Environment.html#getExternalStorageDirectory()
-        // and: https://developer.android.com/reference/android/os/Environment.html#DIRECTORY_PICTURES
-        val fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() +
-                File.separator +
-                "Screenshot"
-        val fileFile = File(fileLocation)
-        if (!fileFile.exists()) fileFile.mkdirs()
-    }
 
     // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/
     // java/com/example/android/ktfiles/MainActivity.kt
@@ -69,15 +39,6 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
             intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             intent.putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
             startActivityForResult(intent, documentRequestCode)
-        }
-    }
-
-    private fun setFiles() {
-        preferences = PreferenceManager.getDefaultSharedPreferences(this)
-        if (preferences.getBoolean("saf", true)) {
-            setDocumentAccess()
-        } else {
-            setStorageAccess()
         }
     }
 
@@ -113,11 +74,12 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         // TODO: Activity() + setActionBar(), AppCompatActivity() + setSupportActionBar()
         val toolbar = findViewById<Toolbar>(R.id.toolbar_main)
         setSupportActionBar(toolbar)  // setActionBar(toolbar)
-        setFiles()
+        preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        setDocumentAccess()
         // TODO: settings fragment UI
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.settings_main, SettingsFragment())
+            .replace(R.id.fragment_settings, SettingsFragment())
             .commit()
         startForeService()
     }

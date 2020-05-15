@@ -35,16 +35,12 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
-import android.os.Environment.DIRECTORY_PICTURES
-import android.os.Environment.getExternalStoragePublicDirectory
 import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
-import java.io.File
-import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -53,9 +49,9 @@ import kotlin.properties.Delegates
 
 class ScreenshotService : Service() {
 
-    private lateinit var fileLocation: String
     private lateinit var fileName: String
-    private lateinit var fileNewDocument: Uri
+    private lateinit var fileDir: String
+    private lateinit var fileDocument: Uri
     private lateinit var preferences: SharedPreferences
 
     private lateinit var mMediaProjection: MediaProjection
@@ -69,28 +65,18 @@ class ScreenshotService : Service() {
     private var mViewHeight by Delegates.notNull<Int>()
     private var mDensity by Delegates.notNull<Int>()
 
-    private var getSAFPreference by Delegates.notNull<Boolean>()
-
     private fun getPreferences() {
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
-        getSAFPreference = preferences.getBoolean("saf", true)
     }
 
     // https://stackoverflow.com/a/37486214
     private fun getFiles() {  // regenerate filename
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
-        if (getSAFPreference) {
-            val dir = preferences.getString("directory", "null")!!
-            val uri = Uri.parse(dir)
-            val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, uri)!!
-            val newDocumentFile = documentFile.createFile("image/png", fileName)!!
-            fileNewDocument = newDocumentFile.uri
-        } else {
-            fileLocation = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString() +
-                    File.separator +
-                    "Screenshot"
-        }
+        fileDir = preferences.getString("directory", "null")!!
+        val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, Uri.parse(fileDir))!!
+        val newDocumentFile = documentFile.createFile("image/png", fileName)!!
+        fileDocument = newDocumentFile.uri
     }
 
     private fun createObjectThread() {
@@ -231,22 +217,11 @@ class ScreenshotService : Service() {
                 // TODO: bug on this method -> picture not available
                 bitmap.copyPixelsFromBuffer(buffer)
             }
-            if (getSAFPreference) {
-                // https://stackoverflow.com/a/49998139
-                contentResolver.openOutputStream(fileNewDocument, "rw")!!.also { fileOutputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-                    fileOutputStream.flush()
-                    fileOutputStream.close()
-                }
-            } else {
-                val onFileLocation = fileLocation
-                val onFileName = fileName
-                val onFileTarget = File(onFileLocation + File.separator + onFileName)
-                FileOutputStream(onFileTarget).also { fileOutputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-                    fileOutputStream.flush()
-                    fileOutputStream.close()
-                }
+            // https://stackoverflow.com/a/49998139
+            contentResolver.openOutputStream(fileDocument, "rw")!!.also { fileOutputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                fileOutputStream.flush()
+                fileOutputStream.close()
             }
             buffer.clear()
             bitmap.recycle()
@@ -264,10 +239,9 @@ class ScreenshotService : Service() {
             // #insert(android.net.Uri,%20android.content.ContentValues)
             val values = ContentValues(3).apply {
                 put(MediaStore.Images.Media.TITLE, fileName)
-                // TODO: express "Screenshot" dir using SAF uri (1)
                 put(
                     MediaStore.Images.Media.RELATIVE_PATH,
-                    DIRECTORY_PICTURES.toString() + File.separator + "Screenshot"
+                    fileDir
                 )
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
             }
@@ -275,14 +249,7 @@ class ScreenshotService : Service() {
         } else {
             // https://developer.android.com/training/camera/photobasics#TaskGallery
             Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
-                // TODO: express "Screenshot" dir using SAF uri (2)
-                val fileDir = if (getSAFPreference) {
-                    fileNewDocument.toString()
-                } else {
-                    fileLocation
-                }
-                val file = File(fileDir + File.separator  + fileName)
-                mediaScanIntent.data = Uri.fromFile(file)
+                mediaScanIntent.data = fileDocument
                 sendBroadcast(mediaScanIntent)
             }
         }
