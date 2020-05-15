@@ -50,7 +50,6 @@ import kotlin.properties.Delegates
 class ScreenshotService : Service() {
 
     private lateinit var fileName: String
-    private lateinit var fileDir: String
     private lateinit var fileDocument: Uri
     private lateinit var preferences: SharedPreferences
 
@@ -73,8 +72,8 @@ class ScreenshotService : Service() {
     private fun getFiles() {  // regenerate filename
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         fileName = "Screenshot-$fileDate.png"
-        fileDir = preferences.getString("directory", "null")!!
-        val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, Uri.parse(fileDir))!!
+        val dir = preferences.getString("directory", "null")!!
+        val documentFile: DocumentFile = DocumentFile.fromTreeUri(this, Uri.parse(dir))!!
         val newDocumentFile = documentFile.createFile("image/png", fileName)!!
         fileDocument = newDocumentFile.uri
     }
@@ -237,12 +236,8 @@ class ScreenshotService : Service() {
             // https://stackoverflow.com/a/59196277
             // https://developer.android.com/reference/android/content/ContentResolver
             // #insert(android.net.Uri,%20android.content.ContentValues)
-            val values = ContentValues(3).apply {
+            val values = ContentValues(2).apply {
                 put(MediaStore.Images.Media.TITLE, fileName)
-                put(
-                    MediaStore.Images.Media.RELATIVE_PATH,
-                    fileDir
-                )
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
             }
             contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
