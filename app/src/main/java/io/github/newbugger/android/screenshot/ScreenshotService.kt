@@ -122,9 +122,9 @@ class ScreenshotService : Service() {
 
     fun createMediaValues(tMediaProjection: MediaProjection) {
         mMediaProjection = tMediaProjection
-        applicationContext.also {
-            mWindowManager = it.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            mDisplayMetrics = it.resources.displayMetrics
+        applicationContext.also { context ->
+            mWindowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            mDisplayMetrics = context.resources.displayMetrics
         }
     }
 
@@ -142,10 +142,10 @@ class ScreenshotService : Service() {
         // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
         // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
         val mDisplay = mWindowManager.defaultDisplay
-        Point().also {
-            mDisplay.getRealSize(it)
-            mViewWidth = it.x
-            mViewHeight = it.y
+        Point().also { size ->
+            mDisplay.getRealSize(size)
+            mViewWidth = size.x
+            mViewHeight = size.y
         }
         /* } */
         mDensity = mDisplayMetrics.densityDpi
