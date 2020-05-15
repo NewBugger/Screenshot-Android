@@ -240,7 +240,7 @@ class ScreenshotService : Service() {
             val values = ContentValues(3).apply {
                 put(MediaStore.Images.Media.TITLE, fileName)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES)
+                put(MediaStore.Images.Media.RELATIVE_PATH, DIRECTORY_PICTURES + "Screenshot")
             }
             contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
         } else {
