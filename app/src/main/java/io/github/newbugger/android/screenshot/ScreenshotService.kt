@@ -76,8 +76,10 @@ class ScreenshotService : Service() {
         fileDocument = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // https://stackoverflow.com/a/59196277
             // https://developer.android.com/reference/android/content/ContentResolver
-            ContentValues(3)
+            // https://developer.android.com/reference/android/content/ContentValues#ContentValues(int)
+            ContentValues()
                 .apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
                     put(MediaStore.Images.Media.TITLE, fileName)
                     put(MediaStore.Images.Media.MIME_TYPE, "image/png")
                     put(MediaStore.Images.Media.RELATIVE_PATH, "$DIRECTORY_PICTURES/Screenshot")
