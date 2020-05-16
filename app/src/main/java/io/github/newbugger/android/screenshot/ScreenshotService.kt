@@ -102,12 +102,8 @@ class ScreenshotService : Service() {
         // start capture handling thread
         object : Thread("Thread") {
             override fun run() {
-                // https://stackoverflow.com/a/42179437
                 Looper.prepare()
-                val handlerThread = HandlerThread("HandlerThread")
-                handlerThread.start()
-                val loop = handlerThread.looper
-                mHandler = Handler(loop)
+                mHandler = Handler(Looper.getMainLooper())
                 Looper.loop()
             }
         }.start()
