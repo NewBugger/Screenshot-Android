@@ -31,7 +31,7 @@ class ScreenshotActivity : Activity() {
 
     private fun mediaManager() {
         mMediaProjectionManager =
-            applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
     }
 
     private fun mediaIntent() {
@@ -67,7 +67,7 @@ class ScreenshotActivity : Activity() {
                     val mMediaProjection: MediaProjection =
                         mMediaProjectionManager.getMediaProjection(resultCode, data)
                     screenshotService.createMediaValues(mMediaProjection)
-                    ScreenshotService.startCapture(this, true)
+                    ScreenshotService.startCapture(this)
                 }
                 else -> return
             }

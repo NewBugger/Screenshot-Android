@@ -20,7 +20,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
-import android.graphics.PixelFormat
+import android.graphics.PixelFormat.RGBA_8888
 import android.graphics.Point
 import android.graphics.drawable.Icon
 import android.hardware.display.DisplayManager
@@ -38,6 +38,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.DisplayMetrics
+import android.view.Display
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
@@ -56,14 +57,11 @@ class ScreenshotService : Service() {
 
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mVirtualDisplay: VirtualDisplay
-    private lateinit var mDisplayMetrics: DisplayMetrics
-    private lateinit var mWindowManager: WindowManager
     private lateinit var mImageReader: ImageReader
     private lateinit var mHandler: Handler
 
     private var mViewWidth by Delegates.notNull<Int>()
     private var mViewHeight by Delegates.notNull<Int>()
-    private var mDensity by Delegates.notNull<Int>()
 
     private fun getPreferences() {
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -71,13 +69,13 @@ class ScreenshotService : Service() {
 
     // https://stackoverflow.com/a/37486214
     private fun getFiles() {  // regenerate filename
-        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
+        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
         fileName = "Screenshot-$fileDate.png"
         fileDocument = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // https://stackoverflow.com/a/59196277
             // https://developer.android.com/reference/android/content/ContentResolver
             // https://developer.android.com/reference/android/content/ContentValues#ContentValues(int)
-            ContentValues()
+            ContentValues(4)
                 .apply {
                     put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
                     put(MediaStore.Images.Media.TITLE, fileName)
@@ -124,10 +122,6 @@ class ScreenshotService : Service() {
 
     fun createMediaValues(tMediaProjection: MediaProjection) {
         mMediaProjection = tMediaProjection
-        applicationContext.also { context ->
-            mWindowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            mDisplayMetrics = context.resources.displayMetrics
-        }
     }
 
     private fun createViewValues() {
@@ -143,21 +137,23 @@ class ScreenshotService : Service() {
         } else { */
         // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
         // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
-        val mDisplay = mWindowManager.defaultDisplay
-        Point().also { size ->
-            mDisplay.getRealSize(size)
-            mViewWidth = size.x
-            mViewHeight = size.y
+        val mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val mDisplay = mWindowManager.defaultDisplay as Display
+        val size = Point().also {
+            mDisplay.getRealSize(it)
         }
+        mViewWidth = size.x
+        mViewHeight = size.y
         /* } */
-        mDensity = mDisplayMetrics.densityDpi
     }
 
     private fun createVirtualDisplay() {
+        val mDisplayMetrics = resources.displayMetrics as DisplayMetrics
+        val mDensity = mDisplayMetrics.densityDpi
         mImageReader = ImageReader.newInstance(
             mViewWidth,
             mViewHeight,
-            PixelFormat.RGBA_8888,
+            RGBA_8888,
             1
         )
         val delay = preferences.getString("delay", "1000")!!.toLong()
@@ -184,20 +180,22 @@ class ScreenshotService : Service() {
             mHandler
         )
         mMediaProjection.registerCallback(MediaProjectionStopCallback(), null)
-        // register media projection stop callback
     }
 
     private fun createWorkerTasks() {
-        getPreferences()
         getFiles()
-        createObjectThread()
         createViewValues()
         createVirtualDisplay()
         createWorkListeners()
     }
 
+    private fun createWorkerStart() {
+        getPreferences()
+        createObjectThread()
+    }
+
     private fun stopProjection() {
-        mHandler.post {  // after image saved, stop MediaFunction intent
+        mHandler.post {
             mMediaProjection.stop()
         }
     }
@@ -221,7 +219,6 @@ class ScreenshotService : Service() {
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
             val bitmap = Bitmap.createBitmap(
-                    mDisplayMetrics,  // Its initial density is determined from the given DisplayMetrics
                     onViewWidth,
                     onViewHeight,
                     Bitmap.Config.ARGB_8888,
@@ -236,7 +233,7 @@ class ScreenshotService : Service() {
                 val rowPadding = rowStride - pixelStride * onViewWidth
                 Utils.getColor(bitmap, buffer, onViewHeight, onViewWidth, pixelStride, rowPadding)
             } else {
-                // TODO: bug on this method -> picture not available
+                // TODO:: bug: on this method -> picture not available
                 bitmap.copyPixelsFromBuffer(buffer)
             }
             // https://stackoverflow.com/a/49998139
@@ -296,7 +293,8 @@ class ScreenshotService : Service() {
         val notificationAction: Notification.Action = Notification.Action.Builder(
             Icon.createWithResource(this, R.drawable.ic_snooze),
             getString(R.string.notification_button),
-            notificationIntentScreenshot)
+            notificationIntentScreenshot
+        )
             .build()
 
         val notificationBuilder: Notification = Notification.Builder(this, notificationsCHANNELID)
@@ -324,12 +322,16 @@ class ScreenshotService : Service() {
         // https://stackoverflow.com/questions/61276730/media-projections-require-
         // a-foreground-service-of-type-serviceinfo-foreground-se
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(notificationsNotificationId,
+            startForeground(
+                notificationsNotificationId,
                 notificationBuilder,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            )
         } else {
-            startForeground(notificationsNotificationId,
-                notificationBuilder)
+            startForeground(
+                notificationsNotificationId,
+                notificationBuilder
+            )
         }
     }
 
@@ -347,8 +349,12 @@ class ScreenshotService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        startInForeground()
-        if (intent.getBooleanExtra("flag", false)) createWorkerTasks()
+        if (intent.getBooleanExtra("capture", true)) {  // if run Capture intent
+            createWorkerTasks()
+        } else {
+            startInForeground()
+            createWorkerStart()  // Preferences and Handler generate for only once
+        }
         return START_NOT_STICKY
     }
 
@@ -360,13 +366,14 @@ class ScreenshotService : Service() {
     companion object {
         fun startForeground(context: Context) {
             Intent(context, ScreenshotService::class.java).also { intent ->
+                intent.putExtra("capture", false)
                 context.startService(intent)
             }
         }
 
-        fun startCapture(context: Context, flag: Boolean) {
+        fun startCapture(context: Context) {
             Intent(context, ScreenshotService::class.java).also { intent ->
-                intent.putExtra("flag", flag)
+                intent.putExtra("capture", true)
                 context.startService(intent)
             }
         }
