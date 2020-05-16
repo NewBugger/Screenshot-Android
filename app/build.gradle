@@ -13,16 +13,16 @@ apply plugin: 'kotlin-android-extensions'
 
 android {
     // https://developer.android.com/preview/setup-sdk
-    // compileSdkVersion 29
-    // buildToolsVersion "29.0.3"
-    compileSdkVersion 'android-R'
-    buildToolsVersion = '30.0.0 rc4'
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
+    // compileSdkVersion 'android-R'
+    // buildToolsVersion = '30.0.0 rc4'
 
     defaultConfig {
         applicationId "io.github.newbugger.android.screenshot"
         minSdkVersion 26
-        // targetSdkVersion 29
-        targetSdkVersion 30
+        targetSdkVersion 29
+        // targetSdkVersion 30
         versionCode 1
         versionName "1.0.3.11"
     }

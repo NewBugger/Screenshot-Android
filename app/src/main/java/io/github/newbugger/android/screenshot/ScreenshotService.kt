@@ -118,8 +118,9 @@ class ScreenshotService : Service() {
     }
 
     private fun createViewValues() {
+        // Android 10 cannot install application on Android 11 sdk
         val mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // https://developer.android.com/reference/android/view/Display
             // #getSize(android.graphics.Point)
             // https://developer.android.com/reference/android/view/WindowManager#getCurrentWindowMetrics()
@@ -128,7 +129,7 @@ class ScreenshotService : Service() {
                 mViewWidth = it.width()
                 mViewHeight = it.height()
             }
-        } else {
+        } else { */
             // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
             // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
             Point().also {
@@ -137,7 +138,7 @@ class ScreenshotService : Service() {
                 mViewWidth = it.x
                 mViewHeight = it.y
             }
-        }
+        /* } */
     }
 
     private fun createVirtualDisplay() {
