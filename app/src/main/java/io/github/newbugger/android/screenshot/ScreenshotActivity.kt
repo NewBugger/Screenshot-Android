@@ -29,16 +29,14 @@ class ScreenshotActivity : Activity() {
 
     // Service Binder
     private lateinit var screenshotService: ScreenshotService
-    private var screenshotBound: Boolean = false
 
     private val screenshotConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, binderName: IBinder) {
             val binder = binderName as ScreenshotService.ServiceBinder
             screenshotService = binder.service  // mService = binder.getService()
-            screenshotBound = true
         }
         override fun onServiceDisconnected(name: ComponentName) {
-            screenshotBound = false
+            // empty
         }
     }
 
@@ -84,7 +82,7 @@ class ScreenshotActivity : Activity() {
 
     override fun onStop() {
         super.onStop()
-        if (screenshotBound) unbindService(screenshotConnection)
+        unbindService(screenshotConnection)
     }
 
 }
