@@ -100,7 +100,7 @@ class ScreenshotService : Service() {
 
     private fun createObjectThread() {
         // start capture handling thread
-        object : Thread("Thread") {
+        object : HandlerThread("Thread") {
             override fun run() {
                 Looper.prepare()
                 mHandler = Handler(Looper.getMainLooper())
