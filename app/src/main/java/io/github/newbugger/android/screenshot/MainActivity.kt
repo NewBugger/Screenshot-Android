@@ -58,7 +58,8 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
             when (requestCode) {
                 documentRequestCode -> {
                     val directoryUri = data.data ?: return
-                    // TODO: reduce the permission level
+                    // reduce the uri permission level,
+                    // use mediaStore instead already.
                     contentResolver.takePersistableUriPermission(
                         directoryUri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -78,7 +79,6 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         setSupportActionBar(toolbar)  // setActionBar(toolbar)
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
         setDocumentAccess()
-        // TODO: settings fragment UI
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.fragment_settings, SettingsFragment())

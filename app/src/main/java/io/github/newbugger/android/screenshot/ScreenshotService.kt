@@ -67,10 +67,9 @@ class ScreenshotService : Service() {
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
     }
 
-    // https://stackoverflow.com/a/37486214
-    private fun getFiles() {  // regenerate filename
+    private fun getFiles() {
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
-        fileName = "Screenshot-$fileDate.png"
+        fileName = "Screenshot-$fileDate.png"  // regenerate filename
         fileDocument = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // https://stackoverflow.com/a/59196277
             // https://developer.android.com/reference/android/content/ContentResolver
@@ -113,7 +112,7 @@ class ScreenshotService : Service() {
                     Handler(loop)
                 } */
                 // TODO: Handler() is deprecated in Android 11
-                // TODO: bug:: too many works on your main thread when on AVD but not mobiles
+                // TODO:: bug: too many works on your main thread when on AVD but not mobiles
                 mHandler = Handler()
                 Looper.loop()
             }
@@ -158,7 +157,6 @@ class ScreenshotService : Service() {
         )
         val delay = preferences.getString("delay", "1000")!!.toLong()
         mHandler.postDelayed({
-            // https://stackoverflow.com/a/54352394
             mVirtualDisplay = mMediaProjection.createVirtualDisplay(
                 "screenshot",
                 mViewWidth,
@@ -170,7 +168,6 @@ class ScreenshotService : Service() {
                 null,
                 null
             )
-            // TODO: replaced the method of time wait
         }, delay)
     }
 
@@ -225,9 +222,8 @@ class ScreenshotService : Service() {
                     false
                 )
             if (preferences.getBoolean("setPixel", true)) {
-                // logcat:: I/Choreographer: Skipped 120 frames!  The application may be doing
-                // too much work on its main thread.
                 // TODO: find a method more efficient
+                // TODO: Android 11 provides a context.Screenshot() method
                 val pixelStride = planes[0].pixelStride
                 val rowStride = planes[0].rowStride
                 val rowPadding = rowStride - pixelStride * onViewWidth

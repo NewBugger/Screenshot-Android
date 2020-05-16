@@ -26,8 +26,7 @@ class ScreenshotActivity : Activity() {
 
     private lateinit var mMediaProjectionManager: MediaProjectionManager
 
-    // Service Binder
-    private lateinit var screenshotService: ScreenshotService
+    private lateinit var screenshotService: ScreenshotService  // binder
 
     private fun mediaManager() {
         mMediaProjectionManager =
@@ -55,15 +54,7 @@ class ScreenshotActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK && data != null) {
             when (requestCode) {
-                projectionRequestCode -> {  // call MediaFunction to capture the current screen display
-                    // just write it the foreground, don't need it to run Media Projection
-                    /* if (screenshotService == null) {
-                        Toast.makeText(this, "wait for screenshotService binder ..", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    mMediaProjection =
-                        screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data)
-                    */
+                projectionRequestCode -> {
                     val mMediaProjection: MediaProjection =
                         mMediaProjectionManager.getMediaProjection(resultCode, data)
                     screenshotService.createMediaValues(mMediaProjection)
@@ -84,7 +75,7 @@ class ScreenshotActivity : Activity() {
         super.onStart()
         Intent(this, ScreenshotService::class.java).also { intent ->
             bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
-        }  // bind to the Service
+        }
         mediaIntent()  // start Intent after binder
     }
 
@@ -94,9 +85,3 @@ class ScreenshotActivity : Activity() {
     }
 
 }
-
-// https://stackoverflow.com/a/48474529
-// https://stackoverflow.com/a/14296609
-// https://stackoverflow.com/a/49208513
-// private infix fun Byte.shl(that: Int): Int = this.toInt().shl(that)
-// private infix fun Byte.and(that: Int): Int = this.toInt().and(that)
