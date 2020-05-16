@@ -85,15 +85,11 @@ class ScreenshotActivity : Activity() {
         Intent(this, ScreenshotService::class.java).also { intent ->
             bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
         }  // bind to the Service
-    }
-
-    override fun onResume() {
-        super.onResume()
         mediaIntent()  // start Intent after binder
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
+        super.onStop()
         unbindService(screenshotConnection)
     }
 
