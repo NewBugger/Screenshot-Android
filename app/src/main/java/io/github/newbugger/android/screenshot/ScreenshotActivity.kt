@@ -68,6 +68,7 @@ class ScreenshotActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaManager()
+        mediaIntent()  // start Intent only once
     }
 
     // https://developer.android.com/guide/components/bound-services.html#kotlin
@@ -76,7 +77,6 @@ class ScreenshotActivity : Activity() {
         Intent(this, ScreenshotService::class.java).also { intent ->
             bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
         }
-        mediaIntent()  // start Intent after binder
     }
 
     override fun onStop() {
