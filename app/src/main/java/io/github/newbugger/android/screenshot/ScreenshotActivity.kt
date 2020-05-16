@@ -24,11 +24,22 @@ class ScreenshotActivity : Activity() {
 
     private val projectionRequestCode = 1000
 
-    private lateinit var mMediaProjection: MediaProjection
     private lateinit var mMediaProjectionManager: MediaProjectionManager
 
     // Service Binder
     private lateinit var screenshotService: ScreenshotService
+
+    private fun mediaManager() {
+        mMediaProjectionManager =
+            applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+    }
+
+    private fun mediaIntent() {
+        startActivityForResult(  // request Projection allowed with each tap
+            mMediaProjectionManager.createScreenCaptureIntent(),
+            projectionRequestCode
+        )
+    }
 
     private val screenshotConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, binderName: IBinder) {
@@ -53,7 +64,8 @@ class ScreenshotActivity : Activity() {
                     mMediaProjection =
                         screenshotService!!.createMediaProjection(mMediaProjectionManager, requestCode, data)
                     */
-                    mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data)
+                    val mMediaProjection: MediaProjection =
+                        mMediaProjectionManager.getMediaProjection(resultCode, data)
                     screenshotService.createMediaValues(mMediaProjection)
                     ScreenshotService.startCapture(this, "capture")
                 }
@@ -64,12 +76,7 @@ class ScreenshotActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mMediaProjectionManager =
-            applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        startActivityForResult(  // request Projection allowed with each tap
-            mMediaProjectionManager.createScreenCaptureIntent(),
-            projectionRequestCode
-        )
+        mediaManager()
     }
 
     // https://developer.android.com/guide/components/bound-services.html#kotlin
@@ -80,8 +87,13 @@ class ScreenshotActivity : Activity() {
         }  // bind to the Service
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onResume() {
+        super.onResume()
+        mediaIntent()  // start Intent after binder
+    }
+
+    override fun onPause() {
+        super.onPause()
         unbindService(screenshotConnection)
     }
 
