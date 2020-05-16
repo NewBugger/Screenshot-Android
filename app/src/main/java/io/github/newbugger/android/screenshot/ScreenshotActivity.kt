@@ -67,7 +67,7 @@ class ScreenshotActivity : Activity() {
                     val mMediaProjection: MediaProjection =
                         mMediaProjectionManager.getMediaProjection(resultCode, data)
                     screenshotService.createMediaValues(mMediaProjection)
-                    ScreenshotService.startCapture(this, "capture")
+                    ScreenshotService.startCapture(this, true)
                 }
                 else -> return
             }

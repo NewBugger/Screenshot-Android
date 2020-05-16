@@ -348,7 +348,7 @@ class ScreenshotService : Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         startInForeground()
-        if (intent.getStringExtra("flag") == "capture") createWorkerTasks()
+        if (intent.getBooleanExtra("flag", false)) createWorkerTasks()
         return START_NOT_STICKY
     }
 
@@ -364,7 +364,7 @@ class ScreenshotService : Service() {
             }
         }
 
-        fun startCapture(context: Context, flag: String) {
+        fun startCapture(context: Context, flag: Boolean) {
             Intent(context, ScreenshotService::class.java).also { intent ->
                 intent.putExtra("flag", flag)
                 context.startService(intent)
