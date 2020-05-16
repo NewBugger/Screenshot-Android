@@ -99,21 +99,15 @@ class ScreenshotService : Service() {
     }
 
     private fun createObjectThread() {
-        object : HandlerThread("HandlerThread") {  // start capture handling thread
+        // start capture handling thread
+        object : Thread("Thread") {
             override fun run() {
-                Looper.prepare()
                 // https://stackoverflow.com/a/42179437
-                /* val handlerThread = HandlerThread("HandlerThread")
+                Looper.prepare()
+                val handlerThread = HandlerThread("HandlerThread")
                 handlerThread.start()
                 val loop = handlerThread.looper
-                mHandler = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    Handler.createAsync(loop)
-                } else {
-                    Handler(loop)
-                } */
-                // TODO: Handler() is deprecated in Android 11
-                // TODO:: bug: too many works on your main thread when on AVD but not mobiles
-                mHandler = Handler()
+                mHandler = Handler(loop)
                 Looper.loop()
             }
         }.start()
@@ -124,26 +118,26 @@ class ScreenshotService : Service() {
     }
 
     private fun createViewValues() {
-        // TODO: full Android 11 (R) support
-        // Android 10 cannot install app include Android 11 apis
-        /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // https://developer.android.com/reference/android/view/Display
             // #getSize(android.graphics.Point)
             // https://developer.android.com/reference/android/view/WindowManager#getCurrentWindowMetrics()
-            // https://developer.android.com/reference/android/view/WindowMetrics#getSize()
-            mViewWidth = mWindowManager.currentWindowMetrics.size.width
-            mViewHeight = mWindowManager.currentWindowMetrics.size.height
-        } else { */
-        // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
-        // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
-        val mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val mDisplay = mWindowManager.defaultDisplay as Display
-        val size = Point().also {
-            mDisplay.getRealSize(it)
+            // https://developer.android.com/reference/android/view/WindowMetrics#getBounds()
+            mWindowManager.currentWindowMetrics.bounds.also {
+                mViewWidth = it.width()
+                mViewHeight = it.height()
+            }
+        } else {
+            // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
+            // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
+            Point().also {
+                val mDisplay = mWindowManager.defaultDisplay as Display
+                mDisplay.getRealSize(it)
+                mViewWidth = it.x
+                mViewHeight = it.y
+            }
         }
-        mViewWidth = size.x
-        mViewHeight = size.y
-        /* } */
     }
 
     private fun createVirtualDisplay() {
