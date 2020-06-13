@@ -9,7 +9,6 @@
 
 package io.github.newbugger.android.screenshot.media
 
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Point
@@ -17,7 +16,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.view.Display
 import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
@@ -34,7 +32,7 @@ object Number {
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun getFileDocument(fileName: String, contentResolver: ContentResolver): Uri {
+    fun getFileDocument(fileName: String): ContentValues {
         // https://stackoverflow.com/a/59196277
         // https://developer.android.com/reference/android/content/ContentResolver
         // https://developer.android.com/reference/android/content/ContentValues#ContentValues(int)
@@ -47,9 +45,6 @@ object Number {
                     MediaStore.Images.Media.RELATIVE_PATH,
                     "${Environment.DIRECTORY_PICTURES}/Screenshot"
                 )
-            }
-            .let {
-                contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
             }
     }
 
@@ -83,12 +78,12 @@ object Number {
         }
     }*/
 
-    fun getViewWidth(mDisplay: Display, yes: Boolean): Int {
+    fun getViewWidth(point: Point, yes: Boolean): Int {
         // https://developer.android.com/reference/android/view/Display
         // #getRealSize(android.graphics.Point)
         // https://developer.android.com/reference/android/view/WindowManager
         // #getDefaultDisplay()
-        return Point().also { mDisplay.getRealSize(it) }.let {
+        return point.let {
             if (yes) {
                 it.x
             } else {

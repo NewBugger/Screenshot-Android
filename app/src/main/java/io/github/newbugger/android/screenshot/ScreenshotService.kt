@@ -17,6 +17,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat.RGBA_8888
+import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.Image
@@ -24,6 +25,7 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.net.Uri
 import android.os.*
+import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.view.Display
 import android.view.WindowManager
@@ -37,21 +39,12 @@ import java.nio.ByteBuffer
 
 class ScreenshotService : Service() {
 
-    private lateinit var mContext: Context
     private lateinit var mHandler: Handler
+    private lateinit var mContext: Context
 
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mVirtualDisplay: VirtualDisplay
     private lateinit var mImageReader: ImageReader
-
-    private fun getFileDocument(contentResolver: ContentResolver): Uri {
-        val fileName = Number.getFileName()
-        return if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
-            Number.getFileDocument(fileName, contentResolver)
-        } else {
-            Number.getFileDocument(fileName, this)
-        }
-    }
 
     private fun createObjectThread() {
         // start capture handling thread
@@ -64,6 +57,17 @@ class ScreenshotService : Service() {
         }.start()
     }
 
+    private fun getFileDocument(ct: ContentResolver): Uri {
+        val fileName = Number.getFileName()
+        return if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
+            Number.getFileDocument(fileName).let { cv ->
+                ct.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv)!!
+            }
+        } else {
+            Number.getFileDocument(fileName, this)
+        }
+    }
+
     fun createMediaValue(tMediaProjection: MediaProjection) {
         mMediaProjection = tMediaProjection
     }
@@ -74,7 +78,7 @@ class ScreenshotService : Service() {
             return Number.getViewWidth(mWindowManager, yes)
         } else { */
             val mDisplay = mWindowManager.defaultDisplay as Display
-            return Number.getViewWidth(mDisplay, yes)
+            return Number.getViewWidth(Point().also { mDisplay.getRealSize(it) }, yes)
         /* } */
     }
 
@@ -89,33 +93,34 @@ class ScreenshotService : Service() {
             RGBA_8888,
             1
         )
-        val delay = PreferenceUtil.getString(mContext, "delay", "1000").toLong()
-        mHandler.postDelayed({
-            mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-                "screenshot",
-                onViewWidth,
-                onViewHeight,
-                mDensity,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
-                        DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-                mImageReader.surface,
-                null,
-                null
-            )
-        }, delay)
+        mVirtualDisplay = mMediaProjection.createVirtualDisplay(
+            "screenshot",
+            onViewWidth,
+            onViewHeight,
+            mDensity,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+            mImageReader.surface,
+            null,
+            null
+        )
     }
 
     private fun createWorkListeners() {
         mImageReader.setOnImageAvailableListener(
             ImageAvailableListener(),
-            mHandler
+            null
         )
         mMediaProjection.registerCallback(MediaProjectionStopCallback(), null)
     }
 
+    // TODO: bug:: produce 2 pictures at one time
     private fun createWorkerTasks() {
-        createVirtualDisplay()
-        createWorkListeners()
+        val delay = PreferenceUtil.getString(mContext, "delay", "1000").toLong()
+        mHandler.postDelayed({
+            createVirtualDisplay()
+            createWorkListeners()
+        }, delay)
     }
 
     private fun createWorkerStart() {
@@ -124,18 +129,15 @@ class ScreenshotService : Service() {
     }
 
     private fun stopProjection() {
-        mHandler.post {
-            mMediaProjection.stop()
-        }
+        mMediaProjection.stop()
+        createFinishToast()
     }
 
     private inner class MediaProjectionStopCallback : MediaProjection.Callback() {
         override fun onStop() {
-            mHandler.post {
-                mVirtualDisplay.release()
-                mImageReader.setOnImageAvailableListener(null, null)
-                mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
-            }
+            mImageReader.setOnImageAvailableListener(null, null)
+            mVirtualDisplay.release()
+            mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
         }
     }
 
@@ -165,8 +167,8 @@ class ScreenshotService : Service() {
                 bitmap.copyPixelsFromBuffer(buffer)
             }
             // https://stackoverflow.com/a/49998139
-            contentResolver.let {
-                it.openOutputStream(getFileDocument(it), "rw")!!.also { fileOutputStream ->
+            contentResolver.let { ct ->
+                ct.openOutputStream(getFileDocument(ct), "rw")!!.also { fileOutputStream ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                     fileOutputStream.flush()
                     fileOutputStream.close()
@@ -176,7 +178,6 @@ class ScreenshotService : Service() {
             bitmap.recycle()
             image.close()
             stopProjection()
-            createFinishToast()
         }
     }
 
