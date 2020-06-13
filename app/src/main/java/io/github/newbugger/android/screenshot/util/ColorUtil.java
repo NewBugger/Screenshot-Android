@@ -7,14 +7,14 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot;
+package io.github.newbugger.android.screenshot.util;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
-
 import java.nio.ByteBuffer;
 
-public final class Utils {
+
+public final class ColorUtil {
 
     public static void getColor(Bitmap bitmap, ByteBuffer buffer,
                                 int height, int width,

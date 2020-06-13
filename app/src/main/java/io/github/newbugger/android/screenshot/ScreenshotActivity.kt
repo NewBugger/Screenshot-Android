@@ -34,7 +34,7 @@ class ScreenshotActivity : Activity() {
     }
 
     private fun mediaIntent() {
-        startActivityForResult(  // request Projection allowed with each tap
+        startActivityForResult(  // request NotificationUtil allowed with each tap
             mMediaProjectionManager.createScreenCaptureIntent(),
             projectionRequestCode
         )
@@ -57,7 +57,7 @@ class ScreenshotActivity : Activity() {
                 projectionRequestCode -> {
                     val mMediaProjection: MediaProjection =
                         mMediaProjectionManager.getMediaProjection(resultCode, data)
-                    screenshotService.createMediaValues(mMediaProjection)
+                    screenshotService.createMediaValue(mMediaProjection)
                     ScreenshotService.startCapture(this)
                 }
                 else -> return

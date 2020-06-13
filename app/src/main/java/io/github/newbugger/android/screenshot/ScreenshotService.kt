@@ -9,92 +9,47 @@
 
 package io.github.newbugger.android.screenshot
 
-import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.app.PendingIntent
-import android.content.ContentValues
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat.RGBA_8888
-import android.graphics.Point
-import android.graphics.drawable.Icon
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.net.Uri
-import android.os.Binder
-import android.os.Build
-import android.os.Environment.DIRECTORY_PICTURES
-import android.os.Handler
-import android.os.HandlerThread
-import android.os.IBinder
-import android.os.Looper
-import android.provider.MediaStore
+import android.os.*
 import android.util.DisplayMetrics
 import android.view.Display
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.documentfile.provider.DocumentFile
-import androidx.preference.PreferenceManager
+import io.github.newbugger.android.screenshot.media.Number
+import io.github.newbugger.android.screenshot.util.ColorUtil
+import io.github.newbugger.android.screenshot.util.NotificationUtil
+import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.nio.ByteBuffer
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import kotlin.properties.Delegates
 
 
 class ScreenshotService : Service() {
 
-    private lateinit var fileName: String
-    private lateinit var fileDocument: Uri
-    private lateinit var preferences: SharedPreferences
+    private lateinit var mContext: Context
+    private lateinit var mHandler: Handler
 
     private lateinit var mMediaProjection: MediaProjection
     private lateinit var mVirtualDisplay: VirtualDisplay
     private lateinit var mImageReader: ImageReader
-    private lateinit var mHandler: Handler
 
-    private var mViewWidth by Delegates.notNull<Int>()
-    private var mViewHeight by Delegates.notNull<Int>()
-
-    private fun getPreferences() {
-        preferences = PreferenceManager.getDefaultSharedPreferences(this)
-    }
-
-    private fun getFiles() {
-        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
-        fileName = "Screenshot-$fileDate.png"  // regenerate filename
-        fileDocument = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // https://stackoverflow.com/a/59196277
-            // https://developer.android.com/reference/android/content/ContentResolver
-            // https://developer.android.com/reference/android/content/ContentValues#ContentValues(int)
-            ContentValues(4)
-                .apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-                    put(MediaStore.Images.Media.TITLE, fileName)
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                    put(MediaStore.Images.Media.RELATIVE_PATH, "$DIRECTORY_PICTURES/Screenshot")
-                }
-                .let {
-                    contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
-                }
+    private fun getFileDocument(contentResolver: ContentResolver): Uri {
+        val fileName = Number.getFileName()
+        return if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
+            Number.getFileDocument(fileName, contentResolver)
         } else {
-            preferences.getString("directory", "null")!!
-                .let {
-                    Uri.parse(it)
-                }
-                .let {
-                    DocumentFile.fromTreeUri(this, it)!!
-                }
-                .let {
-                    it.createFile("image/png", fileName)!!
-                }.uri
+            Number.getFileDocument(fileName, this)
         }
     }
 
@@ -109,49 +64,37 @@ class ScreenshotService : Service() {
         }.start()
     }
 
-    fun createMediaValues(tMediaProjection: MediaProjection) {
+    fun createMediaValue(tMediaProjection: MediaProjection) {
         mMediaProjection = tMediaProjection
     }
 
-    private fun createViewValues() {
-        // Android 10 cannot install application on Android 11 sdk
+    private fun createViewValue(yes: Boolean): Int {
         val mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // https://developer.android.com/reference/android/view/Display
-            // #getSize(android.graphics.Point)
-            // https://developer.android.com/reference/android/view/WindowManager#getCurrentWindowMetrics()
-            // https://developer.android.com/reference/android/view/WindowMetrics#getBounds()
-            mWindowManager.currentWindowMetrics.bounds.also {
-                mViewWidth = it.width()
-                mViewHeight = it.height()
-            }
+        /* if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.R)) {
+            return Number.getViewWidth(mWindowManager, yes)
         } else { */
-            // https://developer.android.com/reference/android/view/Display#getRealSize(android.graphics.Point)
-            // https://developer.android.com/reference/android/view/WindowManager#getDefaultDisplay()
-            Point().also {
-                val mDisplay = mWindowManager.defaultDisplay as Display
-                mDisplay.getRealSize(it)
-                mViewWidth = it.x
-                mViewHeight = it.y
-            }
+            val mDisplay = mWindowManager.defaultDisplay as Display
+            return Number.getViewWidth(mDisplay, yes)
         /* } */
     }
 
     private fun createVirtualDisplay() {
+        val onViewWidth = createViewValue(true)
+        val onViewHeight = createViewValue(false)
         val mDisplayMetrics = resources.displayMetrics as DisplayMetrics
         val mDensity = mDisplayMetrics.densityDpi
         mImageReader = ImageReader.newInstance(
-            mViewWidth,
-            mViewHeight,
+            onViewWidth,
+            onViewHeight,
             RGBA_8888,
             1
         )
-        val delay = preferences.getString("delay", "1000")!!.toLong()
+        val delay = PreferenceUtil.getString(mContext, "delay", "1000").toLong()
         mHandler.postDelayed({
             mVirtualDisplay = mMediaProjection.createVirtualDisplay(
                 "screenshot",
-                mViewWidth,
-                mViewHeight,
+                onViewWidth,
+                onViewHeight,
                 mDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
                         DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
@@ -171,14 +114,12 @@ class ScreenshotService : Service() {
     }
 
     private fun createWorkerTasks() {
-        getFiles()
-        createViewValues()
         createVirtualDisplay()
         createWorkListeners()
     }
 
     private fun createWorkerStart() {
-        getPreferences()
+        mContext = this  // for preferences use
         createObjectThread()
     }
 
@@ -201,8 +142,8 @@ class ScreenshotService : Service() {
     // use inner class as a implicit reference
     private inner class ImageAvailableListener : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
-            val onViewWidth = mViewWidth
-            val onViewHeight = mViewHeight
+            val onViewWidth = createViewValue(true)
+            val onViewHeight = createViewValue(false)
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
@@ -212,22 +153,24 @@ class ScreenshotService : Service() {
                     Bitmap.Config.ARGB_8888,
                     false
                 )
-            if (preferences.getBoolean("setPixel", true)) {
+            if (PreferenceUtil.getBoolean(mContext, "setPixel")) {
                 // TODO: find a method more efficient
                 // TODO: Android 11 provides a context.Screenshot() method
                 val pixelStride = planes[0].pixelStride
                 val rowStride = planes[0].rowStride
                 val rowPadding = rowStride - pixelStride * onViewWidth
-                Utils.getColor(bitmap, buffer, onViewHeight, onViewWidth, pixelStride, rowPadding)
+                ColorUtil.getColor(bitmap, buffer, onViewHeight, onViewWidth, pixelStride, rowPadding)
             } else {
                 // TODO:: bug: on this method -> picture not available
                 bitmap.copyPixelsFromBuffer(buffer)
             }
             // https://stackoverflow.com/a/49998139
-            contentResolver.openOutputStream(fileDocument, "rw")!!.also { fileOutputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-                fileOutputStream.flush()
-                fileOutputStream.close()
+            contentResolver.let {
+                it.openOutputStream(getFileDocument(it), "rw")!!.also { fileOutputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                    fileOutputStream.flush()
+                    fileOutputStream.close()
+                }
             }
             buffer.clear()
             bitmap.recycle()
@@ -243,81 +186,23 @@ class ScreenshotService : Service() {
     }
 
     private fun startInForeground() {
-        val notificationsCHANNELID = "Foreground"
-        val notificationsTextTitle = "Screenshot Service"
-        val notificationsTextContent = "tap to take a Screenshot"
-        val notificationsChannelName = "Foreground"
-        val notificationsChannelDescription = "Foreground Service"
-        val notificationsSmallIcon = R.mipmap.ic_launcher_round
-        val notificationsImportance = NotificationManager.IMPORTANCE_LOW
-        val notificationsNotificationId = 1038
-
-        val notificationIntentScreenshot: PendingIntent =
-            Intent(this, ScreenshotActivity::class.java)
-                .let { notificationPendingIntent ->
-                    PendingIntent.getActivity(
-                        this,
-                        0,
-                        notificationPendingIntent,
-                        PendingIntent.FLAG_CANCEL_CURRENT
-                        // the current one should be canceled before generating a new one
-                    )
-                }
-
-        val notificationIntentMain: PendingIntent =
-            Intent(this, MainActivity::class.java)
-                .let { notificationPendingIntent ->
-                    PendingIntent.getActivity(
-                        this,
-                        0,
-                        notificationPendingIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                    )
-                }
-
-        // https://developer.android.com/training/notify-user/build-notification#Actions
-        // https://stackoverflow.com/a/37134139
-        val notificationAction: Notification.Action = Notification.Action.Builder(
-            Icon.createWithResource(this, R.drawable.ic_snooze),
-            getString(R.string.notification_button),
-            notificationIntentScreenshot
-        )
-            .build()
-
-        val notificationBuilder: Notification = Notification.Builder(this, notificationsCHANNELID)
-            .setSmallIcon(notificationsSmallIcon)
-            .setContentTitle(notificationsTextTitle)
-            .setContentText(notificationsTextContent)
-            .setContentIntent(notificationIntentMain)
-            .addAction(notificationAction)
-            .build()
-
-        val channel: NotificationChannel = NotificationChannel(
-            notificationsCHANNELID,
-            notificationsChannelName,
-            notificationsImportance
-        ).apply {
-            description = notificationsChannelDescription
-        }
-
         val notificationManager: NotificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        notificationManager.createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(NotificationUtil.notificationChannel())
 
         // https://developer.android.com/guide/components/services#Foreground
         // https://stackoverflow.com/questions/61276730/media-projections-require-
         // a-foreground-service-of-type-serviceinfo-foreground-se
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
             startForeground(
-                notificationsNotificationId,
-                notificationBuilder,
+                NotificationUtil.notificationsNotificationId,
+                NotificationUtil.notificationBuilder(this),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             )
         } else {
             startForeground(
-                notificationsNotificationId,
-                notificationBuilder
+                NotificationUtil.notificationsNotificationId,
+                NotificationUtil.notificationBuilder(this)
             )
         }
     }
@@ -340,7 +225,7 @@ class ScreenshotService : Service() {
             createWorkerTasks()
         } else {
             startInForeground()
-            createWorkerStart()  // Preferences and Handler generate for only once
+            createWorkerStart()  // Handler generate for only once
         }
         return START_NOT_STICKY
     }

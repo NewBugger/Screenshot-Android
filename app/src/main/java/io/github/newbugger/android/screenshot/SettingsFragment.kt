@@ -10,7 +10,6 @@
 package io.github.newbugger.android.screenshot
 
 import android.content.SharedPreferences
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Bundle
 import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceFragmentCompat
@@ -19,7 +18,8 @@ import androidx.preference.Preference.OnPreferenceChangeListener
 import androidx.preference.SwitchPreference
 
 
-class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeListener {
+class SettingsFragment : PreferenceFragmentCompat(),
+    SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var sharedPreferences: SharedPreferences
 
