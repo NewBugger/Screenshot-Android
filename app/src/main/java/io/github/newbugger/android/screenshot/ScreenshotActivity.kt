@@ -59,6 +59,7 @@ class ScreenshotActivity : Activity() {
                         mMediaProjectionManager.getMediaProjection(resultCode, data)
                     screenshotService.createMediaValue(mMediaProjection)
                     ScreenshotService.startCapture(this)
+                    finish()  // kill this activity as soon
                 }
                 else -> return
             }
@@ -67,21 +68,11 @@ class ScreenshotActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mediaManager()
-        mediaIntent()  // start Intent only once
-    }
-
-    // https://developer.android.com/guide/components/bound-services.html#kotlin
-    override fun onStart() {
-        super.onStart()
         Intent(this, ScreenshotService::class.java).also { intent ->
             bindService(intent, screenshotConnection, Context.BIND_AUTO_CREATE)
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        unbindService(screenshotConnection)
+        mediaManager()
+        mediaIntent()  // start Intent on only once
     }
 
 }
