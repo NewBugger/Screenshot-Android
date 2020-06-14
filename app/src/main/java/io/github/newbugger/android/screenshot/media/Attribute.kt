@@ -9,6 +9,7 @@
 
 package io.github.newbugger.android.screenshot.media
 
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Point
@@ -23,16 +24,17 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
-object Number {
+object Attribute {
 
-    fun getFileName(): String {
+    private fun getFileName(): String {
         val fileDate = LocalDateTime.now()
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
         return "Screenshot-$fileDate.png"  // regenerate filename
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun getFileDocument(fileName: String): ContentValues {
+    fun getFileDocument(ct: ContentResolver): Uri {
+        val fileName = getFileName()
         // https://stackoverflow.com/a/59196277
         // https://developer.android.com/reference/android/content/ContentResolver
         // https://developer.android.com/reference/android/content/ContentValues#ContentValues(int)
@@ -46,9 +48,13 @@ object Number {
                     "${Environment.DIRECTORY_PICTURES}/Screenshot"
                 )
             }
+            .let {
+                ct.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
+            }
     }
 
-    fun getFileDocument(fileName: String, context: Context): Uri {
+    fun getFileDocument(context: Context): Uri {
+        val fileName = getFileName()
         return PreferenceUtil.getString(context, "directory", "null")
             .let {
                 Uri.parse(it)

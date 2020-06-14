@@ -11,7 +11,6 @@ package io.github.newbugger.android.screenshot
 
 import android.app.NotificationManager
 import android.app.Service
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -23,14 +22,12 @@ import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
-import android.net.Uri
 import android.os.*
-import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.view.Display
 import android.view.WindowManager
 import android.widget.Toast
-import io.github.newbugger.android.screenshot.media.Number
+import io.github.newbugger.android.screenshot.media.Attribute
 import io.github.newbugger.android.screenshot.util.ColorUtil
 import io.github.newbugger.android.screenshot.util.NotificationUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
@@ -46,43 +43,21 @@ class ScreenshotService : Service() {
     private lateinit var mVirtualDisplay: VirtualDisplay
     private lateinit var mImageReader: ImageReader
 
-    private fun createObjectThread() {
-        // start capture handling thread
-        object : HandlerThread("Thread") {
-            override fun run() {
-                Looper.prepare()
-                mHandler = Handler(Looper.getMainLooper())
-                Looper.loop()
-            }
-        }.start()
-    }
-
-    private fun getFileDocument(ct: ContentResolver): Uri {
-        val fileName = Number.getFileName()
-        return if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
-            Number.getFileDocument(fileName).let { cv ->
-                ct.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv)!!
-            }
-        } else {
-            Number.getFileDocument(fileName, this)
-        }
-    }
-
-    fun createMediaValue(tMediaProjection: MediaProjection) {
+    fun receiveMediaProjection(tMediaProjection: MediaProjection) {
         mMediaProjection = tMediaProjection
     }
 
     private fun createViewValue(yes: Boolean): Int {
         val mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         /* if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.R)) {
-            return Number.getViewWidth(mWindowManager, yes)
+            return Attribute.getViewWidth(mWindowManager, yes)
         } else { */
             val mDisplay = mWindowManager.defaultDisplay as Display
-            return Number.getViewWidth(Point().also { mDisplay.getRealSize(it) }, yes)
+            return Attribute.getViewWidth(Point().also { mDisplay.getRealSize(it) }, yes)
         /* } */
     }
 
-    private fun createVirtualDisplay() {
+    private fun createMediaWorks() {
         val onViewWidth = createViewValue(true)
         val onViewHeight = createViewValue(false)
         val mDisplayMetrics = resources.displayMetrics as DisplayMetrics
@@ -92,6 +67,10 @@ class ScreenshotService : Service() {
             onViewHeight,
             RGBA_8888,
             1
+        )
+        mImageReader.setOnImageAvailableListener(
+            ImageAvailableListener(),
+            null
         )
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(
             "screenshot",
@@ -106,44 +85,10 @@ class ScreenshotService : Service() {
         )
     }
 
-    private fun createWorkListeners() {
-        mImageReader.setOnImageAvailableListener(
-            ImageAvailableListener(),
-            null
-        )
-        mMediaProjection.registerCallback(MediaProjectionStopCallback(), null)
-    }
-
-    // TODO: bug:: produce 2 pictures at one time
-    private fun createWorkerTasks() {
-        val delay = PreferenceUtil.getString(mContext, "delay", "1000").toLong()
-        mHandler.postDelayed({
-            createVirtualDisplay()
-            createWorkListeners()
-        }, delay)
-    }
-
-    private fun createWorkerStart() {
-        mContext = this  // for preferences use
-        createObjectThread()
-    }
-
-    private fun stopProjection() {
-        mMediaProjection.stop()
-        createFinishToast()
-    }
-
-    private inner class MediaProjectionStopCallback : MediaProjection.Callback() {
-        override fun onStop() {
-            mImageReader.setOnImageAvailableListener(null, null)
-            mVirtualDisplay.release()
-            mMediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
-        }
-    }
-
     // use inner class as a implicit reference
     private inner class ImageAvailableListener : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
+            createStopCallback()  // instantly stop callbacks as avoiding produce 2 pictures
             val onViewWidth = createViewValue(true)
             val onViewHeight = createViewValue(false)
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
@@ -168,7 +113,12 @@ class ScreenshotService : Service() {
             }
             // https://stackoverflow.com/a/49998139
             contentResolver.let { ct ->
-                ct.openOutputStream(getFileDocument(ct), "rw")!!.also { fileOutputStream ->
+                val fileDocument = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
+                    Attribute.getFileDocument(ct)
+                } else {
+                    Attribute.getFileDocument(mContext)
+                }
+                ct.openOutputStream(fileDocument, "rw")!!.also { fileOutputStream ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
                     fileOutputStream.flush()
                     fileOutputStream.close()
@@ -177,13 +127,37 @@ class ScreenshotService : Service() {
             buffer.clear()
             bitmap.recycle()
             image.close()
-            stopProjection()
+            createFinishToast()
         }
     }
 
     private fun createFinishToast() {
-        // TODO: bug on this toast -> the toast shows too many times
-        Toast.makeText(this, "Screenshot saved.", Toast.LENGTH_LONG).show()
+        Toast.makeText(mContext, "Screenshot saved.", Toast.LENGTH_LONG).show()
+    }
+
+    private fun createStopCallback() {
+        mImageReader.setOnImageAvailableListener(null, null)
+        mVirtualDisplay.release()
+        mMediaProjection.stop()
+    }
+
+    private fun createWorkerTasks() {
+        mContext = this
+        val delay = PreferenceUtil.getString(mContext, "delay", "1000").toLong()
+        mHandler.postDelayed({
+            createMediaWorks()
+        }, delay)
+    }
+
+    private fun createObjectThread() {
+        // start capture handling thread
+        object : HandlerThread("Thread") {
+            override fun run() {
+                Looper.prepare()
+                mHandler = Handler(Looper.getMainLooper())
+                Looper.loop()
+            }
+        }.start()
     }
 
     private fun startInForeground() {
@@ -226,7 +200,7 @@ class ScreenshotService : Service() {
             createWorkerTasks()
         } else {
             startInForeground()
-            createWorkerStart()  // Handler generate for only once
+            createObjectThread()  // Handler generate for only once
         }
         return START_NOT_STICKY
     }
