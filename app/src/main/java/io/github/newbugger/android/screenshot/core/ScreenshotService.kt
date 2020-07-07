@@ -7,100 +7,61 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot
+package io.github.newbugger.android.screenshot.core
 
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
-import android.graphics.PixelFormat.RGBA_8888
-import android.graphics.Point
-import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.*
-import android.util.DisplayMetrics
-import android.view.Display
-import android.view.WindowManager
 import android.widget.Toast
-import io.github.newbugger.android.screenshot.media.Attribute
-import io.github.newbugger.android.screenshot.util.ColorUtil
-import io.github.newbugger.android.screenshot.util.NotificationUtil
-import io.github.newbugger.android.screenshot.util.PreferenceUtil
+import io.github.newbugger.android.screenshot.util.*
 import java.nio.ByteBuffer
 
 
 class ScreenshotService : Service() {
 
-    private lateinit var mHandler: Handler
-    private lateinit var mContext: Context
+    private lateinit var handler: Handler
 
-    private lateinit var mMediaProjection: MediaProjection
-    private lateinit var mVirtualDisplay: VirtualDisplay
-    private lateinit var mImageReader: ImageReader
-
-    fun receiveMediaProjection(tMediaProjection: MediaProjection) {
-        mMediaProjection = tMediaProjection
-    }
-
-    private fun createViewValue(yes: Boolean): Int {
-        val mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        /* if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.R)) {
-            return Attribute.getViewWidth(mWindowManager, yes)
-        } else { */
-            val mDisplay = mWindowManager.defaultDisplay as Display
-            return Attribute.getViewWidth(Point().also { mDisplay.getRealSize(it) }, yes)
-        /* } */
-    }
+    private lateinit var mediaProjection: MediaProjection
+    private lateinit var virtualDisplay: VirtualDisplay
+    private lateinit var imageReader: ImageReader
 
     private fun createMediaWorks() {
-        val onViewWidth = createViewValue(true)
-        val onViewHeight = createViewValue(false)
-        val mDisplayMetrics = resources.displayMetrics as DisplayMetrics
-        val mDensity = mDisplayMetrics.densityDpi
-        mImageReader = ImageReader.newInstance(
-            onViewWidth,
-            onViewHeight,
-            RGBA_8888,
-            1
-        )
-        mImageReader.setOnImageAvailableListener(
-            ImageAvailableListener(),
-            null
-        )
-        mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-            "screenshot",
-            onViewWidth,
-            onViewHeight,
-            mDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-            mImageReader.surface,
-            null,
-            null
-        )
+        val onViewWidth = AttributeUtil.getViewWidth(true)
+        val onViewHeight = AttributeUtil.getViewWidth(false)
+        mediaProjection = MediaUtil.mediaProjection()
+        imageReader = MediaUtil.imageReader(onViewWidth, onViewHeight).apply {
+            setOnImageAvailableListener(
+                ImageAvailableListener(),
+                null
+            )
+        }
+        virtualDisplay = MediaUtil.virtualDisplay(onViewWidth, onViewHeight, mediaProjection, imageReader)
     }
 
     // use inner class as a implicit reference
-    private inner class ImageAvailableListener : ImageReader.OnImageAvailableListener {
+    private inner class ImageAvailableListener: ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
-            createStopCallback()  // instantly stop callbacks as avoiding produce 2 pictures
-            val onViewWidth = createViewValue(true)
-            val onViewHeight = createViewValue(false)
+            createStopCallback()  // instantly stop callbacks as avoiding over-produce 2 pictures
+            val onViewWidth = AttributeUtil.getViewWidth(true)
+            val onViewHeight = AttributeUtil.getViewWidth(false)
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
             val bitmap = Bitmap.createBitmap(
-                    onViewWidth,
-                    onViewHeight,
-                    Bitmap.Config.ARGB_8888,
-                    false
-                )
-            if (PreferenceUtil.getBoolean(mContext, "setPixel")) {
+                MediaUtil.displayMetrics(),
+                onViewWidth,
+                onViewHeight,
+                Bitmap.Config.ARGB_8888,
+                false
+            )
+            if (PreferenceUtil.getBoolean("setPixel")) {
                 // TODO: find a method more efficient
                 // TODO: Android 11 provides a context.Screenshot() method
                 val pixelStride = planes[0].pixelStride
@@ -114,9 +75,9 @@ class ScreenshotService : Service() {
             // https://stackoverflow.com/a/49998139
             contentResolver.let { ct ->
                 val fileDocument = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
-                    Attribute.getFileDocument(ct)
+                    AttributeUtil.getFileResolver()
                 } else {
-                    Attribute.getFileDocument(mContext)
+                    AttributeUtil.getFileDocument()
                 }
                 ct.openOutputStream(fileDocument, "rw")!!.also { fileOutputStream ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
@@ -132,19 +93,18 @@ class ScreenshotService : Service() {
     }
 
     private fun createFinishToast() {
-        Toast.makeText(mContext, "Screenshot saved.", Toast.LENGTH_LONG).show()
+        Toast.makeText(Val.context, "Screenshot saved.", Toast.LENGTH_LONG).show()
     }
 
     private fun createStopCallback() {
-        mImageReader.setOnImageAvailableListener(null, null)
-        mVirtualDisplay.release()
-        mMediaProjection.stop()
+        imageReader.setOnImageAvailableListener(null, null)
+        virtualDisplay.release()
+        mediaProjection.stop()
     }
 
     private fun createWorkerTasks() {
-        mContext = this
-        val delay = PreferenceUtil.getString(mContext, "delay", "1000").toLong()
-        mHandler.postDelayed({
+        val delay = PreferenceUtil.getString("delay", "1000").toLong()
+        handler.postDelayed({
             createMediaWorks()
         }, delay)
     }
@@ -154,30 +114,26 @@ class ScreenshotService : Service() {
         object : HandlerThread("Thread") {
             override fun run() {
                 Looper.prepare()
-                mHandler = Handler(Looper.getMainLooper())
+                handler = Handler(Looper.getMainLooper())
                 Looper.loop()
             }
         }.start()
     }
 
     private fun startInForeground() {
-        val notificationManager: NotificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(NotificationUtil.notificationChannel())
-
         // https://developer.android.com/guide/components/services#Foreground
         // https://stackoverflow.com/questions/61276730/media-projections-require-
         // a-foreground-service-of-type-serviceinfo-foreground-se
         if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
             startForeground(
                 NotificationUtil.notificationsNotificationId,
-                NotificationUtil.notificationBuilder(this),
+                NotificationUtil.notificationBuilder(),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             )
         } else {
             startForeground(
                 NotificationUtil.notificationsNotificationId,
-                NotificationUtil.notificationBuilder(this)
+                NotificationUtil.notificationBuilder()
             )
         }
     }
@@ -186,16 +142,12 @@ class ScreenshotService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
-    // https://developer.android.com/guide/components/bound-services.html#Binder
-    override fun onBind(intent: Intent): IBinder {
-        return ServiceBinder()
-    }
-    internal inner class ServiceBinder : Binder() {
-        val service: ScreenshotService
-            get() = this@ScreenshotService
+    override fun onBind(intent: Intent): IBinder? {
+        return null
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        Val.context = this
         if (intent.getBooleanExtra("capture", true)) {  // if run Capture intent
             createWorkerTasks()
         } else {
@@ -206,8 +158,8 @@ class ScreenshotService : Service() {
     }
 
     override fun onDestroy() {
-        stopInForeground()
         super.onDestroy()
+        stopInForeground()
     }
 
     companion object {
@@ -229,6 +181,11 @@ class ScreenshotService : Service() {
             Intent(context, ScreenshotService::class.java).also { intent ->
                 context.stopService(intent)
             }
+        }
+
+        object Val {
+            lateinit var context: Context
+            fun context(): Context = context
         }
     }
 

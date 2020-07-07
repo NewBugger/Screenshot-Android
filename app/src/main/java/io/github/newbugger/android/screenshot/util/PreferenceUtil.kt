@@ -13,40 +13,30 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.preference.PreferenceManager
+import io.github.newbugger.android.screenshot.core.ScreenshotService
 
 
 object PreferenceUtil {
 
-    private fun setContextPreferences(context: Context): SharedPreferences {
-        return PreferenceManager.getDefaultSharedPreferences(context)
-    }
+    private fun setContextPreferences(context: Context): SharedPreferences =
+        PreferenceManager.getDefaultSharedPreferences(context)
 
-    fun checkSdkVersion(num: Int): Boolean {
-        return Build.VERSION.SDK_INT >= num
-    }
+    fun checkSdkVersion(num: Int): Boolean =
+        Build.VERSION.SDK_INT >= num
 
-    fun checkDirectory(context: Context): Boolean {
-        return setContextPreferences(context).getString("directory", null) != null
-    }
+    fun checkDirectory(context: Context): Boolean =
+        setContextPreferences(context).getString("directory", null) != null
 
     fun putString(context: Context, id: String, value: String) {
         setContextPreferences(context).edit().putString(id, value).apply()
     }
 
-    fun getString(context: Context, id: String, default: String): String {
-        return setContextPreferences(context).getString(id, default)!!
-    }
+    fun getString(id: String, default: String): String =
+        setContextPreferences(context()).getString(id, default)!!
 
-    fun getString(pref: SharedPreferences, id: String, default: String): String {
-        return pref.getString(id, default)!!
-    }
+    fun getBoolean(id: String): Boolean =
+        setContextPreferences(context()).getBoolean(id, true)
 
-    fun getBoolean(context: Context, id: String): Boolean {
-        return setContextPreferences(context).getBoolean(id, true)
-    }
-
-    fun getBoolean(pref: SharedPreferences, id: String): Boolean {
-        return pref.getBoolean(id, true)
-    }
+    private fun context(): Context = ScreenshotService.Companion.Val.context()
 
 }

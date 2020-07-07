@@ -7,7 +7,7 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot
+package io.github.newbugger.android.screenshot.ui
 
 import android.content.Intent
 import android.os.Build
@@ -17,15 +17,15 @@ import android.provider.DocumentsContract.EXTRA_INITIAL_URI
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
-// import android.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import io.github.newbugger.android.screenshot.R
+import io.github.newbugger.android.screenshot.core.ScreenshotService
+import io.github.newbugger.android.screenshot.util.BuildUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 
 
-class MainActivity : AppCompatActivity() {  // temporarily a fake and null activity
-
-    private val documentRequestCode = 1001
+class MainActivity : AppCompatActivity() {
 
     // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/
     // java/com/example/android/ktfiles/MainActivity.kt
@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
             intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             intent.putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
-            startActivityForResult(intent, documentRequestCode)
+            startActivityForResult(intent, BuildUtil.Constant.Code.documentRequestCode)
         }
     }
 
@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK && data != null) {
             when (requestCode) {
-                documentRequestCode -> {
+                BuildUtil.Constant.Code.documentRequestCode -> {
                     val directoryUri = data.data ?: return
                     // reduce the uri permission level,
                     // use mediaStore instead already.
@@ -71,11 +71,6 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        setDocumentAccess()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -84,8 +79,12 @@ class MainActivity : AppCompatActivity() {  // temporarily a fake and null activ
         setSupportActionBar(toolbar)  // setActionBar(toolbar)
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.fragment_settings, SettingsFragment())
+            .replace(
+                R.id.fragment_settings,
+                SettingsFragment()
+            )
             .commit()
+        setDocumentAccess()
         startForeService()
     }
 
