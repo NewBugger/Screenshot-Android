@@ -24,8 +24,8 @@ import io.github.newbugger.android.screenshot.core.ScreenshotService
 
 object NotificationUtil {
 
-    fun createNotificationChannel(context: Context) {
-        notificationManager(context).createNotificationChannel(notificationChannel())
+    fun createNotificationChannel() {
+        notificationManager().createNotificationChannel(notificationChannel())
     }
 
     fun notificationBuilder(): Notification {
@@ -80,8 +80,8 @@ object NotificationUtil {
             description = notificationsChannelDescription
         }
 
-    private fun notificationManager(context: Context): NotificationManager =
-        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private fun notificationManager(): NotificationManager =
+        context().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     private const val notificationsCHANNELID = "Foreground"
     private const val notificationsTextTitle = "Screenshot Service"

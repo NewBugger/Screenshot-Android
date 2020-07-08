@@ -15,6 +15,7 @@ import android.media.projection.MediaProjection
 import android.os.Bundle
 import io.github.newbugger.android.screenshot.util.BuildUtil
 import io.github.newbugger.android.screenshot.util.MediaUtil
+import io.github.newbugger.android.screenshot.util.ProjectionUtil
 
 
 class ScreenshotActivity : Activity() {
@@ -33,7 +34,7 @@ class ScreenshotActivity : Activity() {
                 BuildUtil.Constant.Code.projectionRequestCode -> {
                     val mMediaProjection: MediaProjection =
                         MediaUtil.mediaProjectionManager().getMediaProjection(resultCode, data)
-                    MediaUtil.receiveMediaProjection(mMediaProjection)
+                    ProjectionUtil.receiveMediaProjection(mMediaProjection)
                     ScreenshotService.startCapture(this)
                     finish()  // kill this activity as soon
                 }

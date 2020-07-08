@@ -12,17 +12,13 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    // https://developer.android.com/preview/setup-sdk
-    // compileSdkVersion 29
-    // buildToolsVersion "29.0.3"
     compileSdkVersion 30
     buildToolsVersion = "30.0.0"
 
     defaultConfig {
         applicationId "io.github.newbugger.android.screenshot"
         minSdkVersion 28
-        targetSdkVersion 29
-        // targetSdkVersion 30
+        targetSdkVersion 30
         versionCode 2
         versionName "1.0.4.0"
     }
@@ -36,7 +32,7 @@ android {
         release {
             zipAlignEnabled true
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-debug.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -48,4 +44,6 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.3.0'
     implementation 'androidx.preference:preference-ktx:1.1.1'
     implementation 'androidx.documentfile:documentfile:1.0.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.7'
 }

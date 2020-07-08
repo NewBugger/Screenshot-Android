@@ -9,13 +9,7 @@
 
 package io.github.newbugger.android.screenshot.util
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.PixelFormat
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.ImageReader
-import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.util.DisplayMetrics
@@ -33,6 +27,7 @@ object MediaUtil {
         }
     }
 
+    // need its getter each time for latest screen width
     fun display(): Display = mDisplay()
     private fun mDisplay(): Display =
         if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.R)) {
@@ -41,43 +36,10 @@ object MediaUtil {
             mWindowManager().defaultDisplay as Display
         }
 
+    // need its getter each time for latest screen width
     fun windowManager(): WindowManager = mWindowManager()
     private fun mWindowManager(): WindowManager =
         context().getSystemService(Context.WINDOW_SERVICE) as WindowManager
-
-    fun virtualDisplay(onViewWidth: Int, onViewHeight:Int,
-                       mMediaProjection: MediaProjection, mImageReader: ImageReader): VirtualDisplay =
-        mVirtualDisplay(onViewWidth, onViewHeight, mMediaProjection, mImageReader)
-    private fun mVirtualDisplay(onViewWidth: Int, onViewHeight:Int,
-                                mMediaProjection: MediaProjection, mImageReader: ImageReader): VirtualDisplay =
-        mMediaProjection.createVirtualDisplay(
-            "screenshot",
-            onViewWidth,
-            onViewHeight,
-            displayMetrics().densityDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-            mImageReader.surface,
-            null,
-            null
-        )
-
-    fun imageReader(onViewWidth: Int, onViewHeight:Int): ImageReader =
-        mImageReader(onViewWidth, onViewHeight)
-    @SuppressLint("WrongConstant")
-    private fun mImageReader(onViewWidth: Int, onViewHeight:Int): ImageReader =
-        ImageReader.newInstance(
-            onViewWidth,
-            onViewHeight,
-            PixelFormat.RGBA_8888,
-            1
-        )
-
-    fun receiveMediaProjection(tMediaProjection: MediaProjection) {
-        mMediaProjection = tMediaProjection
-    }
-    fun mediaProjection(): MediaProjection = mMediaProjection
-    private lateinit var mMediaProjection: MediaProjection
 
     fun mediaProjectionManager(): MediaProjectionManager = mMediaProjectionManager().get()
     private fun mMediaProjectionManager() = object: Singleton<MediaProjectionManager>() {

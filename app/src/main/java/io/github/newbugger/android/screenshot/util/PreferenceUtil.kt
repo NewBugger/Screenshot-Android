@@ -18,24 +18,24 @@ import io.github.newbugger.android.screenshot.core.ScreenshotService
 
 object PreferenceUtil {
 
-    private fun setContextPreferences(context: Context): SharedPreferences =
+    private fun preferences(context: Context): SharedPreferences =
         PreferenceManager.getDefaultSharedPreferences(context)
 
     fun checkSdkVersion(num: Int): Boolean =
         Build.VERSION.SDK_INT >= num
 
-    fun checkDirectory(context: Context): Boolean =
-        setContextPreferences(context).getString("directory", null) != null
+    fun checkDirectory(): Boolean =
+        preferences(context()).getString("directory", null) != null
 
-    fun putString(context: Context, id: String, value: String) {
-        setContextPreferences(context).edit().putString(id, value).apply()
+    fun putString(id: String, value: String) {
+        preferences(context()).edit().putString(id, value).apply()
     }
 
     fun getString(id: String, default: String): String =
-        setContextPreferences(context()).getString(id, default)!!
+        preferences(context()).getString(id, default)!!
 
     fun getBoolean(id: String): Boolean =
-        setContextPreferences(context()).getBoolean(id, true)
+        preferences(context()).getBoolean(id, true)
 
     private fun context(): Context = ScreenshotService.Companion.Val.context()
 

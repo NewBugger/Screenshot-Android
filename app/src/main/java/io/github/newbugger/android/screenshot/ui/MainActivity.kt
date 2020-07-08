@@ -32,12 +32,10 @@ class MainActivity : AppCompatActivity() {
     // https://developer.android.com/training/data-storage/shared/documents-files
     // #grant-access-directory
     private fun setDocumentAccess() {
-        if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) return
-        if (PreferenceUtil.checkDirectory(this)) return
+        if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q) || PreferenceUtil.checkDirectory()) return
         Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
         Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also { intent ->
-            intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             intent.putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
             startActivityForResult(intent, BuildUtil.Constant.Code.documentRequestCode)
         }
@@ -64,7 +62,7 @@ class MainActivity : AppCompatActivity() {
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or
                                 Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
-                    PreferenceUtil.putString(this, "directory", directoryUri.toString())
+                    PreferenceUtil.putString("directory", directoryUri.toString())
                 }
                 else -> return
             }
@@ -84,8 +82,8 @@ class MainActivity : AppCompatActivity() {
                 SettingsFragment()
             )
             .commit()
-        setDocumentAccess()
         startForeService()
+        setDocumentAccess()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

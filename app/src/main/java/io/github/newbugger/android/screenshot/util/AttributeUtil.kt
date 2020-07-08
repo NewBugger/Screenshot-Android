@@ -25,8 +25,6 @@ import java.time.format.DateTimeFormatter
 
 object AttributeUtil {
 
-    private fun context(): Context = ScreenshotService.Companion.Val.context()
-
     private fun getFileName(): String {
         val fileDate = LocalDateTime.now()
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
@@ -100,5 +98,7 @@ object AttributeUtil {
                 it.y
             }
         }
+
+    private fun context(): Context = ScreenshotService.Companion.Val.context()
 
 }
