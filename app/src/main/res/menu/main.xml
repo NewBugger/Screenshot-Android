@@ -1,24 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!--
-  ~ Copyright (c) 2018-2020 : NewBugger (https://github.com/NewBugger)
-  ~
-  ~ This is free software; you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License as published by
-  ~ the Free Software Foundation; either version 3 of the License, or
-  ~ (at your option) any later version.
-  -->
-
 <menu xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".ui.MainActivity">
 
     <item
-        android:id="@+id/action_stopper"
-        android:title="@string/stopper_title"
-        android:icon="@drawable/ic_menu"
+        app:actionLayout="@layout/activity_toggle"
+        android:id="@+id/action_sync"
+        android:title="@string/opener_title"
         app:showAsAction="ifRoom" />
-    <!-- android:icon="@drawable/ic_menu" -->
 
 </menu>

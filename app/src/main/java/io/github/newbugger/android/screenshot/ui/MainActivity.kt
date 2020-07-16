@@ -15,7 +15,7 @@ import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
 import android.provider.DocumentsContract.EXTRA_INITIAL_URI
 import android.view.Menu
-import android.view.MenuItem
+import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -27,26 +27,30 @@ import io.github.newbugger.android.screenshot.util.PreferenceUtil
 
 class MainActivity : AppCompatActivity() {
 
-    // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/
-    // java/com/example/android/ktfiles/MainActivity.kt
-    // https://developer.android.com/training/data-storage/shared/documents-files
-    // #grant-access-directory
-    private fun setDocumentAccess() {
-        if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q) || PreferenceUtil.checkDirectory()) return
-        Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
-        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also { intent ->
-            intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            intent.putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
-            startActivityForResult(intent, BuildUtil.Constant.Code.documentRequestCode)
-        }
-    }
-
     private fun startForeService() {
         ScreenshotService.startForeground(this)
     }
 
     private fun stopForeService() {
         ScreenshotService.stop(this)
+    }
+
+    // https://github.com/android/storage-samples/blob/master/ActionOpenDocumentTree/app/src/main/
+    // java/com/example/android/ktfiles/MainActivity.kt
+    // https://developer.android.com/training/data-storage/shared/documents-files#grant-access-directory
+    private fun setDocumentAccess() {
+        if (!PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
+            if (PreferenceUtil.checkDirectory()) {
+                Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "Storage Access requesting..", Toast.LENGTH_LONG).show()
+                Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also { intent ->
+                    intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    intent.putExtra(EXTRA_INITIAL_URI, DIRECTORY_PICTURES)
+                    startActivityForResult(intent, BuildUtil.Constant.Code.documentRequestCode)
+                }
+            }
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -82,18 +86,24 @@ class MainActivity : AppCompatActivity() {
                 SettingsFragment()
             )
             .commit()
-        startForeService()
         setDocumentAccess()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main, menu)
+        menu.findItem(R.id.action_sync)
+            .setActionView(R.layout.activity_toggle)
+            .actionView.findViewById<Switch>(R.id.main_toggle)
+            .apply {
+                isChecked = ScreenshotService.Companion.Val.checkForeground()
+                setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked)
+                        startForeService()
+                    else
+                        stopForeService()
+                }
+            }
         return super.onCreateOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_stopper) stopForeService()
-        return super.onOptionsItemSelected(item)
     }
 
 }

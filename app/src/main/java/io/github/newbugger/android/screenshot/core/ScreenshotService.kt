@@ -48,6 +48,7 @@ class ScreenshotService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         stopInForeground()
+        Val.checkForeground = false
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -59,6 +60,7 @@ class ScreenshotService : Service() {
         if (intent.getBooleanExtra("capture", true)) {  // if run Capture intent
             ProjectionUtil.createWorkerTasks()
         } else {
+            Val.checkForeground = true
             startInForeground()
         }
         return START_NOT_STICKY
@@ -88,6 +90,8 @@ class ScreenshotService : Service() {
         object Val {
             lateinit var context: Context
             fun context(): Context = context
+            var checkForeground : Boolean = false
+            fun checkForeground(): Boolean = checkForeground
         }
     }
 

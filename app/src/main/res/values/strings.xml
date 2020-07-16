@@ -2,7 +2,7 @@
     <string name="app_name">Screenshot</string>
     <string name="notification_button">start</string>
     <string name="settings_header">Settings</string>
-    <string name="stopper_title">Stop</string>
+    <string name="opener_title">Opener</string>
     <string name="pixel_title">setPixel</string>
     <string name="pixel_summary_on">use bitmap.setPixel() to generate pixels</string>
     <string name="pixel_summary_off">use bitmap.copyPixelsFromBuffer() to generate pixels</string>
