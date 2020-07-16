@@ -41,10 +41,10 @@ object MediaUtil {
     private fun mWindowManager(): WindowManager =
         context().getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-    fun mediaProjectionManager(): MediaProjectionManager = mMediaProjectionManager().get()
-    private fun mMediaProjectionManager() = object: Singleton<MediaProjectionManager>() {
+    fun mediaProjectionManager(context: Context): MediaProjectionManager = mMediaProjectionManager(context).get()
+    private fun mMediaProjectionManager(context: Context) = object: Singleton<MediaProjectionManager>() {
         override fun create(): MediaProjectionManager {
-            return context().getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            return context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         }
     }
 

@@ -39,16 +39,17 @@ class ScreenshotService : Service() {
                 NotificationUtil.notificationBuilder()
             )
         }
+        Val.checkForeground = true
     }
 
     private fun stopInForeground() {
         stopForeground(STOP_FOREGROUND_REMOVE)
+        Val.checkForeground = false
     }
 
     override fun onDestroy() {
         super.onDestroy()
         stopInForeground()
-        Val.checkForeground = false
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -59,8 +60,8 @@ class ScreenshotService : Service() {
         Val.context = this
         if (intent.getBooleanExtra("capture", true)) {  // if run Capture intent
             ProjectionUtil.createWorkerTasks()
+            //if (PreferenceUtil.checkTileMode()) stopInForeground()
         } else {
-            Val.checkForeground = true
             startInForeground()
         }
         return START_NOT_STICKY

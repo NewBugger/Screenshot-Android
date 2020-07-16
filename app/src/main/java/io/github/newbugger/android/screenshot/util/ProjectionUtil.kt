@@ -140,6 +140,7 @@ object ProjectionUtil {
         GlobalScope.launch(context = Dispatchers.Main) {
             delay(delay)
             createMediaWorkers()
+            if (PreferenceUtil.checkTileMode()) ScreenshotService.stop(context())
         }
     }
 

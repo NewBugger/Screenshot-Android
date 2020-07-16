@@ -16,10 +16,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
-import io.github.newbugger.android.screenshot.ui.MainActivity
 import io.github.newbugger.android.screenshot.R
 import io.github.newbugger.android.screenshot.core.ScreenshotActivity
 import io.github.newbugger.android.screenshot.core.ScreenshotService
+import io.github.newbugger.android.screenshot.ui.MainActivity
 
 
 object NotificationUtil {

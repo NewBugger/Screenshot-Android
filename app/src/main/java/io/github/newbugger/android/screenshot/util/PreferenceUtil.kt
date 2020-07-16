@@ -24,11 +24,11 @@ object PreferenceUtil {
     fun checkSdkVersion(num: Int): Boolean =
         Build.VERSION.SDK_INT >= num
 
-    fun checkDirectory(): Boolean =
-        preferences(context()).getString("directory", null) != null
+    fun checkDirectory(context: Context): Boolean =
+        preferences(context).getString("directory", null) != null
 
-    fun putString(id: String, value: String) {
-        preferences(context()).edit().putString(id, value).apply()
+    fun putString(context: Context, id: String, value: String) {
+        preferences(context).edit().putString(id, value).apply()
     }
 
     fun getString(id: String, default: String): String =
@@ -36,6 +36,12 @@ object PreferenceUtil {
 
     fun getBoolean(id: String): Boolean =
         preferences(context()).getBoolean(id, true)
+
+    private var checkTileMode: Boolean = false
+    fun checkTileMode(): Boolean = checkTileMode
+    fun receiveTileMode(tTileMode: Boolean) {
+        checkTileMode = tTileMode
+    }
 
     private fun context(): Context = ScreenshotService.Companion.Val.context()
 

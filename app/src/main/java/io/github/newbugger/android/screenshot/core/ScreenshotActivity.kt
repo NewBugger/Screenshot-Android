@@ -10,19 +10,24 @@
 package io.github.newbugger.android.screenshot.core
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjection
 import android.os.Bundle
 import io.github.newbugger.android.screenshot.util.BuildUtil
 import io.github.newbugger.android.screenshot.util.MediaUtil
+import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import io.github.newbugger.android.screenshot.util.ProjectionUtil
 
 
 class ScreenshotActivity : Activity() {
 
     private fun mediaIntent() {
+        if (PreferenceUtil.checkTileMode() && !ScreenshotService.Companion.Val.checkForeground()) {
+            ScreenshotService.startForeground(context())
+        }
         startActivityForResult(  // request NotificationUtil allowed with each tap
-            MediaUtil.mediaProjectionManager().createScreenCaptureIntent(),
+            MediaUtil.mediaProjectionManager(context()).createScreenCaptureIntent(),
             BuildUtil.Constant.Code.projectionRequestCode
         )
     }
@@ -32,10 +37,9 @@ class ScreenshotActivity : Activity() {
         if (resultCode == RESULT_OK && data != null) {
             when (requestCode) {
                 BuildUtil.Constant.Code.projectionRequestCode -> {
-                    val mMediaProjection: MediaProjection =
-                        MediaUtil.mediaProjectionManager().getMediaProjection(resultCode, data)
+                    val mMediaProjection: MediaProjection = MediaUtil.mediaProjectionManager(context()).getMediaProjection(resultCode, data)
                     ProjectionUtil.receiveMediaProjection(mMediaProjection)
-                    ScreenshotService.startCapture(this)
+                    ScreenshotService.startCapture(context())
                     finish()  // kill this activity as soon
                 }
                 else -> return
@@ -45,7 +49,11 @@ class ScreenshotActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        context = this
         mediaIntent()  // start Intent on only once
     }
+
+    private fun context(): Context = context
+    private lateinit var context: Context
 
 }
