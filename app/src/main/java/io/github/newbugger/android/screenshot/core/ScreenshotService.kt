@@ -18,6 +18,9 @@ import android.os.IBinder
 import io.github.newbugger.android.screenshot.util.NotificationUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import io.github.newbugger.android.screenshot.util.ProjectionUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
 class ScreenshotService : Service() {
@@ -58,9 +61,12 @@ class ScreenshotService : Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         Val.context = this
-        if (intent.getBooleanExtra("capture", true)) {  // if run Capture intent
-            ProjectionUtil.createWorkerTasks()
-            //if (PreferenceUtil.checkTileMode()) stopInForeground()
+        if (intent.getBooleanExtra("capture", true)) {
+            GlobalScope.launch(Dispatchers.Main) {
+                val delay = PreferenceUtil.getString("delay", "3000").toLong()
+                kotlinx.coroutines.delay(delay)
+                ProjectionUtil.createWorkerTasks()
+            }
         } else {
             startInForeground()
         }

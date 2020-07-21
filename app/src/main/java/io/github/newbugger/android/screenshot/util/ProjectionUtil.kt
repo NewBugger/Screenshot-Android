@@ -21,10 +21,6 @@ import android.media.projection.MediaProjection
 import android.os.Build
 import android.widget.Toast
 import io.github.newbugger.android.screenshot.core.ScreenshotService
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 
 
@@ -72,7 +68,6 @@ object ProjectionUtil {
             buffer.clear()
             bitmap.recycle()
             image.close()
-            createFinishToast()
         }
     }
 
@@ -136,12 +131,9 @@ object ProjectionUtil {
     }
 
     fun createWorkerTasks() {
-        val delay = PreferenceUtil.getString("delay", "3000").toLong()
-        GlobalScope.launch(context = Dispatchers.Main) {
-            delay(delay)
-            createMediaWorkers()
-            if (PreferenceUtil.checkTileMode()) ScreenshotService.stop(context())
-        }
+        createMediaWorkers()
+        createFinishToast()
+        if (PreferenceUtil.checkTileMode()) ScreenshotService.stop(context())
     }
 
     private fun context(): Context = ScreenshotService.Companion.Val.context()
