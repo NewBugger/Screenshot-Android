@@ -17,28 +17,27 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import io.github.newbugger.android.screenshot.R
-import io.github.newbugger.android.screenshot.core.ScreenshotActivity
-import io.github.newbugger.android.screenshot.core.ScreenshotService
+import io.github.newbugger.android.screenshot.service.ScreenshotActivity
 import io.github.newbugger.android.screenshot.ui.MainActivity
 
 
 object NotificationUtil {
 
-    fun createNotificationChannel() {
-        notificationManager().createNotificationChannel(notificationChannel())
+    fun createNotificationChannel(context: Context) {
+        notificationManager(context).createNotificationChannel(notificationChannel())
     }
 
-    fun notificationBuilder(): Notification {
-        val notificationIntentMain: PendingIntent = notificationIntent(true)
-        val notificationIntentScreenshot: PendingIntent = notificationIntent(false)
+    fun notificationBuilder(context: Context): Notification {
+        val notificationIntentMain: PendingIntent = notificationIntent(context, true)
+        val notificationIntentScreenshot: PendingIntent = notificationIntent(context, false)
         // https://developer.android.com/training/notify-user/build-notification#Actions
         // https://stackoverflow.com/a/37134139
         val notificationAction: Notification.Action = Notification.Action.Builder(
-            Icon.createWithResource(context(), R.drawable.ic_snooze),
-            context().getString(R.string.notification_button),
+            Icon.createWithResource(context, R.drawable.ic_snooze),
+            context.getString(R.string.notification_button),
             notificationIntentScreenshot
         ).build()
-        return Notification.Builder(context(), notificationsCHANNELID)
+        return Notification.Builder(context, notificationsCHANNELID)
             .setSmallIcon(notificationsSmallIcon)
             .setContentTitle(notificationsTextTitle)
             .setContentText(notificationsTextContent)
@@ -47,22 +46,22 @@ object NotificationUtil {
             .build()
     }
 
-    private fun notificationIntent(yes: Boolean): PendingIntent =
+    private fun notificationIntent(context: Context, yes: Boolean): PendingIntent =
         if (yes) {
-            Intent(context(), MainActivity::class.java)
+            Intent(context, MainActivity::class.java)
                 .let { notificationPendingIntent ->
                     PendingIntent.getActivity(
-                        context(),
+                        context,
                         0,
                         notificationPendingIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 }
         } else {
-            Intent(context(), ScreenshotActivity::class.java)
+            Intent(context, ScreenshotActivity::class.java)
                 .let { notificationPendingIntent ->
                     PendingIntent.getActivity(
-                        context(),
+                        context,
                         0,
                         notificationPendingIntent,
                         PendingIntent.FLAG_CANCEL_CURRENT
@@ -80,8 +79,8 @@ object NotificationUtil {
             description = notificationsChannelDescription
         }
 
-    private fun notificationManager(): NotificationManager =
-        context().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private fun notificationManager(context: Context): NotificationManager =
+        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     private const val notificationsCHANNELID = "Foreground"
     private const val notificationsTextTitle = "Screenshot Service"
@@ -91,7 +90,5 @@ object NotificationUtil {
     private const val notificationsSmallIcon = R.mipmap.ic_launcher_round
     private const val notificationsImportance = NotificationManager.IMPORTANCE_LOW
     const val notificationsNotificationId = 1038
-
-    private fun context(): Context = ScreenshotService.Companion.Val.context()
 
 }

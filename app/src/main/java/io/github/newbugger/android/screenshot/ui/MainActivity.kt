@@ -20,7 +20,7 @@ import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import io.github.newbugger.android.screenshot.R
-import io.github.newbugger.android.screenshot.core.ScreenshotService
+import io.github.newbugger.android.screenshot.service.ScreenshotService
 import io.github.newbugger.android.screenshot.util.BuildUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 

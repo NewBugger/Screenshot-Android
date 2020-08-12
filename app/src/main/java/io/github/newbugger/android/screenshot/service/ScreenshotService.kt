@@ -7,7 +7,7 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.core
+package io.github.newbugger.android.screenshot.service
 
 import android.app.Service
 import android.content.Context
@@ -15,9 +15,9 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import io.github.newbugger.android.screenshot.core.projection.Projection
 import io.github.newbugger.android.screenshot.util.NotificationUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
-import io.github.newbugger.android.screenshot.util.ProjectionUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -25,21 +25,25 @@ import kotlinx.coroutines.launch
 
 class ScreenshotService : Service() {
 
+    private val projection: Projection by lazy {
+        Projection.getInstance(this)
+    }
+
     private fun startInForeground() {
         // https://developer.android.com/guide/components/services#Foreground
         // https://stackoverflow.com/questions/61276730/media-projections-require-
         // a-foreground-service-of-type-serviceinfo-foreground-se
-        NotificationUtil.createNotificationChannel()
+        NotificationUtil.createNotificationChannel(this)
         if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
             startForeground(
                 NotificationUtil.notificationsNotificationId,
-                NotificationUtil.notificationBuilder(),
+                NotificationUtil.notificationBuilder(this),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             )
         } else {
             startForeground(
                 NotificationUtil.notificationsNotificationId,
-                NotificationUtil.notificationBuilder()
+                NotificationUtil.notificationBuilder(this)
             )
         }
         Val.checkForeground = true
@@ -60,12 +64,11 @@ class ScreenshotService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        Val.context = this
         if (intent.getBooleanExtra("capture", true)) {
             GlobalScope.launch(Dispatchers.Main) {
-                val delay = PreferenceUtil.getString("delay", "3000").toLong()
+                val delay = PreferenceUtil.getString(this@ScreenshotService, "delay", "3000").toLong()
                 kotlinx.coroutines.delay(delay)
-                ProjectionUtil.createWorkerTasks()
+                projection.createWorkerTasks()
             }
         } else {
             startInForeground()
@@ -95,8 +98,6 @@ class ScreenshotService : Service() {
         }
 
         object Val {
-            lateinit var context: Context
-            fun context(): Context = context
             var checkForeground : Boolean = false
             fun checkForeground(): Boolean = checkForeground
         }

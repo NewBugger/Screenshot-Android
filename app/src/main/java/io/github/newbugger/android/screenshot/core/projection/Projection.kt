@@ -7,7 +7,7 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.util
+package io.github.newbugger.android.screenshot.core.projection
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -20,44 +20,56 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.widget.Toast
-import io.github.newbugger.android.screenshot.core.ScreenshotService
+import io.github.newbugger.android.screenshot.service.ScreenshotService
+import io.github.newbugger.android.screenshot.util.ColorUtil
+import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.nio.ByteBuffer
 
 
-object ProjectionUtil {
+class Projection(ctx: Context) {
 
-    private class ImageAvailableListener: ImageReader.OnImageAvailableListener {
+    private inner class ImageAvailableListener: ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
             createStopCallback()  // instantly stop callbacks as avoiding over-produce 2 pictures
-            val onViewWidth = AttributeUtil.getViewWidth(true)
-            val onViewHeight = AttributeUtil.getViewWidth(false)
+            val onViewWidth = attribute().getViewWidth(true)
+            val onViewHeight = attribute().getViewWidth(false)
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
             val bitmap = Bitmap.createBitmap(
-                MediaUtil.displayMetrics(),
+                attribute().getDisplayMetrics(),
                 onViewWidth,
                 onViewHeight,
                 Bitmap.Config.ARGB_8888,
                 false
             )
-            if (PreferenceUtil.getBoolean("setPixel")) {
+            if (PreferenceUtil.getBoolean(context, "setPixel")) {
                 // TODO: find a method more efficient
                 // TODO: Android 11 provides a context.Screenshot() method
                 val pixelStride = planes[0].pixelStride
                 val rowStride = planes[0].rowStride
                 val rowPadding = rowStride - pixelStride * onViewWidth
-                ColorUtil.getColor(bitmap, buffer, onViewHeight, onViewWidth, pixelStride, rowPadding)
+                ColorUtil.getColor(
+                    bitmap,
+                    buffer,
+                    onViewHeight,
+                    onViewWidth,
+                    pixelStride,
+                    rowPadding
+                )
             } else {
                 // TODO:: bug: on this method -> picture not available
                 bitmap.copyPixelsFromBuffer(buffer)
             }
             // https://stackoverflow.com/a/49998139
-            context().contentResolver.let { ct ->
-                val fileDocument = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
-                    AttributeUtil.getFileResolver()
+            context.contentResolver.let { ct ->
+                val fileDocument = if (PreferenceUtil.checkSdkVersion(
+                        Build.VERSION_CODES.Q
+                    )
+                ) {
+                    attribute().getFileResolver()
                 } else {
-                    AttributeUtil.getFileDocument()
+                    attribute().getFileDocument()
                 }
                 ct.openOutputStream(fileDocument, "rw")!!.also { fileOutputStream ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
@@ -71,32 +83,26 @@ object ProjectionUtil {
         }
     }
 
-    private fun virtualDisplays(): VirtualDisplay = mVirtualDisplay()
-    private fun virtualDisplay(): VirtualDisplay = mVirtualDisplay
-    private fun mVirtualDisplay(): VirtualDisplay {
-        mVirtualDisplay = mediaProjection().createVirtualDisplay(
+    private fun mVirtualDisplay() {
+        mVirtualDisplay = mMediaProjection.createVirtualDisplay(
             "screenshot",
-            AttributeUtil.getViewWidth(true),
-            AttributeUtil.getViewWidth(false),
-            MediaUtil.displayMetrics().densityDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-            imageReader().surface,
+            attribute().getViewWidth(true),
+            attribute().getViewWidth(false),
+            attribute().getDisplayMetrics().densityDpi,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+            mImageReader.surface,
             null,
             null
         )
-        return mVirtualDisplay
     }
     private lateinit var mVirtualDisplay: VirtualDisplay
 
-    private fun imageReaders(): ImageReader = mImageReader()
-    private fun imageReader(): ImageReader = mImageReader
     @SuppressLint("WrongConstant")
-    private fun mImageReader(): ImageReader {
+    private fun mImageReader() {
         mImageReader =
             ImageReader.newInstance(
-                AttributeUtil.getViewWidth(true),
-                AttributeUtil.getViewWidth(false),
+                attribute().getViewWidth(true),
+                attribute().getViewWidth(false),
                 PixelFormat.RGBA_8888,
                 1
             ).apply {
@@ -105,37 +111,45 @@ object ProjectionUtil {
                     null
                 )
             }
-        return mImageReader
     }
     private lateinit var mImageReader: ImageReader
 
-    fun receiveMediaProjection(tMediaProjection: MediaProjection) {
-        mMediaProjection = tMediaProjection
+    private fun mMediaProjection() {
+        mMediaProjection = ReceiveUtil.getMediaProjection()
     }
-    private fun mediaProjection(): MediaProjection = mMediaProjection
     private lateinit var mMediaProjection: MediaProjection
 
     private fun createStopCallback() {
-        imageReader().setOnImageAvailableListener(null, null)
-        virtualDisplay().release()
-        mediaProjection().stop()
+        mImageReader.setOnImageAvailableListener(null, null)
+        mVirtualDisplay.release()
+        mMediaProjection.stop()
     }
 
-    private fun createMediaWorkers() {
-        imageReaders()
-        virtualDisplays()
+    private fun createStartCaller() {
+        mMediaProjection()
+        mImageReader()
+        mVirtualDisplay()
     }
 
     private fun createFinishToast() {
-        Toast.makeText(context(), "Screenshot saved.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Screenshot saved.", Toast.LENGTH_LONG).show()
     }
 
     fun createWorkerTasks() {
-        createMediaWorkers()
+        createStartCaller()
         createFinishToast()
-        if (PreferenceUtil.checkTileMode()) ScreenshotService.stop(context())
+        if (ReceiveUtil.checkTileMode()) ScreenshotService.stop(context)
     }
 
-    private fun context(): Context = ScreenshotService.Companion.Val.context()
+    private fun attribute(): Attribute = attribute
+    private val attribute: Attribute = Attribute.getInstance(ctx)
+
+    private val context: Context = ctx
+
+    companion object {
+        fun getInstance(ctx: Context): Projection {
+            return Projection(ctx)
+        }
+    }
 
 }

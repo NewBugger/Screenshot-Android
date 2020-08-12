@@ -7,29 +7,31 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.util
+package io.github.newbugger.android.screenshot.core.projection
 
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Point
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.DisplayMetrics
 import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
-import io.github.newbugger.android.screenshot.core.ScreenshotService
+import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
-object AttributeUtil {
+class Attribute(ctx: Context) {
 
-    private fun getFileName(): String {
-        val fileDate = LocalDateTime.now()
-            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
-        return "Screenshot-$fileDate.png"  // regenerate filename
-    }
+    fun getMediaProjectionManager(): MediaProjectionManager =
+        media().mediaProjectionManager()
+
+    fun getDisplayMetrics(): DisplayMetrics =
+        media().displayMetrics()
 
     // https://stackoverflow.com/a/59196277
     // https://developer.android.com/reference/android/content/ContentResolver
@@ -47,23 +49,35 @@ object AttributeUtil {
                 )
             }
             .let {
-                context().contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
+                context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
             }
 
     fun getFileDocument(): Uri =
-        PreferenceUtil.getString("directory", "null")
+        PreferenceUtil.getString(
+            context,
+            "directory",
+            "null"
+        )
             .let {
                 Uri.parse(it)
             }
             .let {
-                DocumentFile.fromTreeUri(context(), it)!!
+                DocumentFile.fromTreeUri(context, it)!!
             }
             .let {
                 it.createFile("image/png", getFileName())!!
             }.uri
 
+    private fun getFileName(): String {
+        val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
+        return "Screenshot-$fileDate.png"  // regenerate filename
+    }
+
     fun getViewWidth(yes: Boolean): Int =
-        if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.R)) {
+        if (PreferenceUtil.checkSdkVersion(
+                Build.VERSION_CODES.R
+            )
+        ) {
             getViewWidthBounds(yes)
         } else {
             getViewWidthSize(yes)
@@ -77,7 +91,7 @@ object AttributeUtil {
     // https://developer.android.com/reference/android/view/WindowMetrics#getBounds()
     @RequiresApi(Build.VERSION_CODES.R)
     private fun getViewWidthBounds(yes: Boolean): Int =
-        MediaUtil.windowManager().currentWindowMetrics.bounds.let {
+        media().windowManager().currentWindowMetrics.bounds.let {
             if (yes) {
                 it.width()
             } else {
@@ -91,7 +105,7 @@ object AttributeUtil {
     // #getDefaultDisplay()
     @RequiresApi(Build.VERSION_CODES.P)
     private fun getViewWidthSize(yes: Boolean): Int =
-        Point().also { MediaUtil.display().getRealSize(it) }.let {
+        Point().also { media().display().getRealSize(it) }.let {
             if (yes) {
                 it.x
             } else {
@@ -99,6 +113,20 @@ object AttributeUtil {
             }
         }
 
-    private fun context(): Context = ScreenshotService.Companion.Val.context()
+    private fun media(): Media = media
+    private val media: Media =
+        Media.getInstance(
+            ctx
+        )
+
+    private val context: Context = ctx
+
+    companion object {
+        fun getInstance(ctx: Context): Attribute {
+            return Attribute(
+                ctx
+            )
+        }
+    }
 
 }

@@ -13,16 +13,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.preference.PreferenceManager
-import io.github.newbugger.android.screenshot.core.ScreenshotService
 
 
 object PreferenceUtil {
 
     private fun preferences(context: Context): SharedPreferences =
         PreferenceManager.getDefaultSharedPreferences(context)
-
-    fun checkSdkVersion(num: Int): Boolean =
-        Build.VERSION.SDK_INT >= num
 
     fun checkDirectory(context: Context): Boolean =
         preferences(context).getString("directory", null) != null
@@ -31,18 +27,13 @@ object PreferenceUtil {
         preferences(context).edit().putString(id, value).apply()
     }
 
-    fun getString(id: String, default: String): String =
-        preferences(context()).getString(id, default)!!
+    fun getString(context: Context, id: String, default: String): String =
+        preferences(context).getString(id, default)!!
 
-    fun getBoolean(id: String): Boolean =
-        preferences(context()).getBoolean(id, true)
+    fun getBoolean(context: Context, id: String): Boolean =
+        preferences(context).getBoolean(id, true)
 
-    private var checkTileMode: Boolean = false
-    fun checkTileMode(): Boolean = checkTileMode
-    fun receiveTileMode(tTileMode: Boolean) {
-        checkTileMode = tTileMode
-    }
-
-    private fun context(): Context = ScreenshotService.Companion.Val.context()
+    fun checkSdkVersion(num: Int): Boolean =
+        Build.VERSION.SDK_INT >= num
 
 }

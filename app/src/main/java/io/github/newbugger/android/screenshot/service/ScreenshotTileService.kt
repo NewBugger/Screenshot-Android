@@ -7,12 +7,12 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.core
+package io.github.newbugger.android.screenshot.service
 
 import android.content.Context
 import android.content.Intent
 import android.service.quicksettings.TileService
-import io.github.newbugger.android.screenshot.util.PreferenceUtil
+import io.github.newbugger.android.screenshot.core.projection.ReceiveUtil
 
 
 class ScreenshotTileService: TileService() {
@@ -29,12 +29,12 @@ class ScreenshotTileService: TileService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        PreferenceUtil.receiveTileMode(false)
+        ReceiveUtil.receiveTileMode(false)
     }
 
     override fun onCreate() {
         super.onCreate()
-        PreferenceUtil.receiveTileMode(true)
+        ReceiveUtil.receiveTileMode(true)
     }
 
     override fun onClick() {
