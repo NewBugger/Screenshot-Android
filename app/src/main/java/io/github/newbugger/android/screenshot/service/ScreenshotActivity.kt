@@ -16,9 +16,19 @@ import android.os.Bundle
 import io.github.newbugger.android.screenshot.core.projection.Attribute
 import io.github.newbugger.android.screenshot.core.projection.ReceiveUtil
 import io.github.newbugger.android.screenshot.util.BuildUtil
+import io.github.newbugger.android.screenshot.util.PreferenceUtil
 
 
 class ScreenshotActivity : Activity() {
+
+    private fun screenshot() {
+        if (PreferenceUtil.getBoolean(this, "reflection", false)) {
+            ScreenshotService.startCapture(this)
+            finish()
+        } else {
+            mediaIntent()  // start Intent on only once
+        }
+    }
 
     private fun mediaIntent() {
         if (ReceiveUtil.checkTileMode() && !ScreenshotService.Companion.Val.checkForeground()) {
@@ -47,7 +57,7 @@ class ScreenshotActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mediaIntent()  // start Intent on only once
+        screenshot()
     }
 
     private val attribute: Attribute by lazy { Attribute.getInstance(this) }

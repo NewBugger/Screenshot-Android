@@ -15,6 +15,13 @@
     <PreferenceCategory android:title="@string/settings_header">
 
         <SwitchPreference
+            android:key="reflection"
+            android:defaultValue="false"
+            android:title="@string/reflection_title"
+            android:summaryOn="@string/reflection_summary_on"
+            android:summaryOff="@string/reflection_summary_on" />
+
+        <SwitchPreference
             android:key="setPixel"
             android:defaultValue="true"
             android:title="@string/pixel_title"

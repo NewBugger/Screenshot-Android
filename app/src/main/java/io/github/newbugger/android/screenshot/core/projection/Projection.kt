@@ -43,7 +43,7 @@ class Projection(ctx: Context) {
                 Bitmap.Config.ARGB_8888,
                 false
             )
-            if (PreferenceUtil.getBoolean(context, "setPixel")) {
+            if (PreferenceUtil.getBoolean(context, "setPixel", true)) {
                 // TODO: find a method more efficient
                 // TODO: Android 11 provides a context.Screenshot() method
                 val pixelStride = planes[0].pixelStride
@@ -61,25 +61,26 @@ class Projection(ctx: Context) {
                 // TODO:: bug: on this method -> picture not available
                 bitmap.copyPixelsFromBuffer(buffer)
             }
-            // https://stackoverflow.com/a/49998139
-            context.contentResolver.let { ct ->
-                val fileDocument = if (PreferenceUtil.checkSdkVersion(
-                        Build.VERSION_CODES.Q
-                    )
-                ) {
-                    attribute().getFileResolver()
-                } else {
-                    attribute().getFileDocument()
-                }
-                ct.openOutputStream(fileDocument, "rw")!!.also { fileOutputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-                    fileOutputStream.flush()
-                    fileOutputStream.close()
-                }
-            }
+            output(bitmap)
             buffer.clear()
             bitmap.recycle()
             image.close()
+        }
+    }
+
+    fun output(bitmap: Bitmap) {
+        // https://stackoverflow.com/a/49998139
+        context.contentResolver.let { ct ->
+            val fileDocument = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
+                attribute().getFileResolver()
+            } else {
+                attribute().getFileDocument()
+            }
+            ct.openOutputStream(fileDocument, "rw")!!.use { fileOutputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                fileOutputStream.flush()
+                fileOutputStream.close()
+            }
         }
     }
 
@@ -131,7 +132,7 @@ class Projection(ctx: Context) {
         mVirtualDisplay()
     }
 
-    private fun createFinishToast() {
+    fun createFinishToast() {
         Toast.makeText(context, "Screenshot saved.", Toast.LENGTH_LONG).show()
     }
 

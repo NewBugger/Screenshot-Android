@@ -3,6 +3,8 @@
     <string name="notification_button">start</string>
     <string name="settings_header">Settings</string>
     <string name="opener_title">Opener</string>
+    <string name="reflection_title">useReflection</string>
+    <string name="reflection_summary_on">use Reflection screenshot</string>
     <string name="pixel_title">setPixel</string>
     <string name="pixel_summary_on">use bitmap.setPixel() to generate pixels</string>
     <string name="pixel_summary_off">use bitmap.copyPixelsFromBuffer() to generate pixels</string>

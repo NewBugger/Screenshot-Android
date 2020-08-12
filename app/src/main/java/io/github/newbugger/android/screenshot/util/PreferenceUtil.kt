@@ -30,8 +30,8 @@ object PreferenceUtil {
     fun getString(context: Context, id: String, default: String): String =
         preferences(context).getString(id, default)!!
 
-    fun getBoolean(context: Context, id: String): Boolean =
-        preferences(context).getBoolean(id, true)
+    fun getBoolean(context: Context, id: String, default: Boolean): Boolean =
+        preferences(context).getBoolean(id, default)
 
     fun checkSdkVersion(num: Int): Boolean =
         Build.VERSION.SDK_INT >= num

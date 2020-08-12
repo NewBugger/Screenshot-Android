@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="io.github.newbugger.android.screenshot">
 
+    <uses-permission android:name="android.permission.READ_FRAME_BUFFER"
+        tools:ignore="ProtectedPermissions" />
+
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application

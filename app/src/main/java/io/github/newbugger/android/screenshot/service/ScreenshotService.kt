@@ -15,7 +15,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
-import io.github.newbugger.android.screenshot.core.projection.Projection
+import io.github.newbugger.android.screenshot.core.Choose
 import io.github.newbugger.android.screenshot.util.NotificationUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +25,8 @@ import kotlinx.coroutines.launch
 
 class ScreenshotService : Service() {
 
-    private val projection: Projection by lazy {
-        Projection.getInstance(this)
+    private val choose: Choose by lazy {
+        Choose.getInstance(this)
     }
 
     private fun startInForeground() {
@@ -68,7 +68,7 @@ class ScreenshotService : Service() {
             GlobalScope.launch(Dispatchers.Main) {
                 val delay = PreferenceUtil.getString(this@ScreenshotService, "delay", "3000").toLong()
                 kotlinx.coroutines.delay(delay)
-                projection.createWorkerTasks()
+                choose.screenshot()
             }
         } else {
             startInForeground()

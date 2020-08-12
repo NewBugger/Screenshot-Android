@@ -53,11 +53,7 @@ class Attribute(ctx: Context) {
             }
 
     fun getFileDocument(): Uri =
-        PreferenceUtil.getString(
-            context,
-            "directory",
-            "null"
-        )
+        PreferenceUtil.getString(context, "directory", "null")
             .let {
                 Uri.parse(it)
             }
@@ -74,10 +70,7 @@ class Attribute(ctx: Context) {
     }
 
     fun getViewWidth(yes: Boolean): Int =
-        if (PreferenceUtil.checkSdkVersion(
-                Build.VERSION_CODES.R
-            )
-        ) {
+        if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.R)) {
             getViewWidthBounds(yes)
         } else {
             getViewWidthSize(yes)
@@ -114,18 +107,13 @@ class Attribute(ctx: Context) {
         }
 
     private fun media(): Media = media
-    private val media: Media =
-        Media.getInstance(
-            ctx
-        )
+    private val media: Media = Media.getInstance(ctx)
 
     private val context: Context = ctx
 
     companion object {
         fun getInstance(ctx: Context): Attribute {
-            return Attribute(
-                ctx
-            )
+            return Attribute(ctx)
         }
     }
 
