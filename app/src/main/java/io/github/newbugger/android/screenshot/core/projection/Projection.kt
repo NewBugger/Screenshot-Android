@@ -20,7 +20,7 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.widget.Toast
-import io.github.newbugger.android.preferences.DefaultMediaStore.Companion.defaultMediaStore
+import io.github.newbugger.android.storage.DefaultMediaStore.Companion.defaultMediaStore
 import io.github.newbugger.android.screenshot.service.ScreenshotService
 import io.github.newbugger.android.screenshot.util.ColorUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil

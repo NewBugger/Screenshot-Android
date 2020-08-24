@@ -9,18 +9,15 @@
 
 package io.github.newbugger.android.screenshot.core.projection
 
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.Point
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import android.util.DisplayMetrics
 import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
-import io.github.newbugger.android.preferences.DefaultMediaStore.Companion.defaultMediaStore
+import io.github.newbugger.android.storage.DefaultMediaStore.Companion.defaultMediaStore
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

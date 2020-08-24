@@ -1,4 +1,13 @@
-package io.github.newbugger.android.preferences
+/*
+ * Copyright (c) 2018-2020 : NewBugger (https://github.com/NewBugger)
+ *
+ * This is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ */
+
+package io.github.newbugger.android.storage
 
 import android.content.ContentResolver
 import android.content.ContentUris
@@ -104,7 +113,12 @@ class DefaultMediaStore(ctx: Context) {
                 val id = cursor.getLong(idColumn)
                 val data = cursor.getString(dataColumn)
                 if (data.endsWith(relativePath + File.separator + displayName)) {
-                    return MediaStoreFile(id, data, tableUri, contentResolver)
+                    return MediaStoreFile(
+                        id,
+                        data,
+                        tableUri,
+                        contentResolver
+                    )
                 }
             }
         }
@@ -125,7 +139,12 @@ class DefaultMediaStore(ctx: Context) {
             if (cursor.moveToFirst()) {
                 val id = cursor.getLong(idIndex)
                 val data = cursor.getString(dataColumn)
-                return MediaStoreFile(id, data, tableUri, contentResolver)
+                return MediaStoreFile(
+                    id,
+                    data,
+                    tableUri,
+                    contentResolver
+                )
             }
         }
 
