@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="io.github.newbugger.android.storage">
+
+    <application
+        android:allowBackup="false"
+        android:supportsRtl="true">
+    </application>
+
+</manifest>

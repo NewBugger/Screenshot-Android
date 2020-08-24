@@ -20,6 +20,7 @@ import android.provider.MediaStore
 import android.util.DisplayMetrics
 import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
+import io.github.newbugger.android.preferences.DefaultMediaStore.Companion.defaultMediaStore
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -37,7 +38,7 @@ class Attribute(ctx: Context) {
     // https://developer.android.com/reference/android/content/ContentResolver
     // https://developer.android.com/reference/android/content/ContentValues#ContentValues(int)
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun getFileResolver(): Uri  =
+    /*fun getFileResolver(): Uri =
         ContentValues(4)
             .apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, getFileName())
@@ -50,7 +51,9 @@ class Attribute(ctx: Context) {
             }
             .let {
                 context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
-            }
+            }*/
+    fun getFileResolver(): Uri =
+        context.defaultMediaStore.Images().newFile("Screenshot", getFileName(), "image/png").uri
 
     fun getFileDocument(): Uri =
         PreferenceUtil.getString(context, "directory", "null")

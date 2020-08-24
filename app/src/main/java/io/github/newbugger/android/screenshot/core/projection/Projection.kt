@@ -20,6 +20,7 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.widget.Toast
+import io.github.newbugger.android.preferences.DefaultMediaStore.Companion.defaultMediaStore
 import io.github.newbugger.android.screenshot.service.ScreenshotService
 import io.github.newbugger.android.screenshot.util.ColorUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
@@ -69,18 +70,15 @@ class Projection(ctx: Context) {
     }
 
     fun output(bitmap: Bitmap) {
-        // https://stackoverflow.com/a/49998139
-        context.contentResolver.let { ct ->
-            val fileDocument = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
-                attribute().getFileResolver()
-            } else {
-                attribute().getFileDocument()
-            }
-            ct.openOutputStream(fileDocument, "rw")!!.use { fileOutputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-                fileOutputStream.flush()
-                fileOutputStream.close()
-            }
+        val fileDocument = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
+            attribute().getFileResolver()
+        } else {
+            attribute().getFileDocument()
+        }
+        context.defaultMediaStore.outputStream(fileDocument).use { fileOutputStream ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+            fileOutputStream.flush()
+            fileOutputStream.close()
         }
     }
 
