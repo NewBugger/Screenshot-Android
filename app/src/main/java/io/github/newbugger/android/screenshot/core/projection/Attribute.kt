@@ -23,13 +23,13 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
-class Attribute(ctx: Context) {
+class Attribute(private val context: Context) {
 
     fun getMediaProjectionManager(): MediaProjectionManager =
-        media().mediaProjectionManager()
+        media.mediaProjectionManager()
 
     fun getDisplayMetrics(): DisplayMetrics =
-        media().displayMetrics()
+        media.displayMetrics()
 
     // https://stackoverflow.com/a/59196277
     // https://developer.android.com/reference/android/content/ContentResolver
@@ -84,7 +84,7 @@ class Attribute(ctx: Context) {
     // https://developer.android.com/reference/android/view/WindowMetrics#getBounds()
     @RequiresApi(Build.VERSION_CODES.R)
     private fun getViewWidthBounds(yes: Boolean): Int =
-        media().windowManager().currentWindowMetrics.bounds.let {
+        media.windowManager().currentWindowMetrics.bounds.let {
             if (yes) {
                 it.width()
             } else {
@@ -98,7 +98,7 @@ class Attribute(ctx: Context) {
     // #getDefaultDisplay()
     @RequiresApi(Build.VERSION_CODES.P)
     private fun getViewWidthSize(yes: Boolean): Int =
-        Point().also { media().display().getRealSize(it) }.let {
+        Point().also { media.display().getRealSize(it) }.let {
             if (yes) {
                 it.x
             } else {
@@ -106,10 +106,7 @@ class Attribute(ctx: Context) {
             }
         }
 
-    private fun media(): Media = media
-    private val media: Media = Media.getInstance(ctx)
-
-    private val context: Context = ctx
+    private val media: Media = Media.getInstance(context)
 
     companion object {
         fun getInstance(ctx: Context): Attribute {

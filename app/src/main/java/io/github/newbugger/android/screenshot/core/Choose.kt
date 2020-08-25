@@ -15,7 +15,7 @@ import io.github.newbugger.android.screenshot.core.reflection.Reflection
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 
 
-class Choose(ctx: Context) {
+class Choose(private val context: Context) {
 
     fun screenshot() {
         if (PreferenceUtil.getBoolean(context, "reflection", false)) {
@@ -34,14 +34,12 @@ class Choose(ctx: Context) {
     }
 
     private val reflection: Reflection by lazy {
-        Reflection.getInstance(ctx)
+        Reflection.getInstance(context)
     }
 
     private val projection: Projection by lazy {
-        Projection.getInstance(ctx)
+        Projection.getInstance(context)
     }
-
-    private val context: Context = ctx
 
     companion object {
         fun getInstance(ctx: Context): Choose {

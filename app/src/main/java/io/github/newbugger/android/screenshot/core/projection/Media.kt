@@ -19,7 +19,7 @@ import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import io.github.newbugger.android.screenshot.util.Singleton
 
 
-class Media(ctx: Context) {
+class Media(private val context: Context) {
 
     fun displayMetrics(): DisplayMetrics = mDisplayMetrics(context).get()
     private fun mDisplayMetrics(context: Context) = object: Singleton<DisplayMetrics>() {
@@ -31,10 +31,7 @@ class Media(ctx: Context) {
     // need its getter each time for latest screen width
     fun display(): Display = mDisplay(context)
     private fun mDisplay(context: Context): Display =
-        if (PreferenceUtil.checkSdkVersion(
-                Build.VERSION_CODES.R
-            )
-        ) {
+        if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.R)) {
             context.display as Display
         } else {
             windowManager().defaultDisplay as Display
@@ -52,13 +49,9 @@ class Media(ctx: Context) {
         }
     }
 
-    private val context: Context = ctx
-
     companion object {
         fun getInstance(ctx: Context): Media {
-            return Media(
-                ctx
-            )
+            return Media(ctx)
         }
     }
 

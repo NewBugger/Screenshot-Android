@@ -21,11 +21,11 @@ import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.lang.reflect.Method
 
 
-class Reflection(ctx: Context) {
+class Reflection(context: Context) {
 
     fun screenshot() {
-        projection().output(reflection())
-        projection().createFinishToast()
+        projection.output(reflection())
+        projection.createFinishToast()
     }
 
     // https://www.jianshu.com/p/bbb82b81f2e2
@@ -34,8 +34,8 @@ class Reflection(ctx: Context) {
     @SuppressLint("Reflection")
     @Throws(TypeCastException::class, NoSuchMethodException::class, SecurityException::class)
     private fun reflection(): Bitmap {
-        val width = attribute().getViewWidth(true)
-        val height = attribute().getViewWidth(false)
+        val width = attribute.getViewWidth(true)
+        val height = attribute.getViewWidth(false)
         val getClass: Class<*> = Class.forName("android.view.SurfaceControl")
         val getMethod: Method = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
             getClass.getDeclaredMethod("screenshot", Rect::class.java, Int::class.java, Int::class.java, Boolean::class.java, Int::class.java)
@@ -49,12 +49,8 @@ class Reflection(ctx: Context) {
         }
     }
 
-    private fun projection(): Projection = projection
-    private val projection: Projection = Projection.getInstance(ctx)
-    private fun attribute(): Attribute = attribute
-    private val attribute: Attribute = Attribute.getInstance(ctx)
-
-    private val context: Context = ctx
+    private val projection: Projection = Projection.getInstance(context)
+    private val attribute: Attribute = Attribute.getInstance(context)
 
     companion object {
         fun getInstance(ctx: Context): Reflection {

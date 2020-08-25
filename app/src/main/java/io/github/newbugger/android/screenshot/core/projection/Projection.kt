@@ -27,18 +27,18 @@ import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.nio.ByteBuffer
 
 
-class Projection(ctx: Context) {
+class Projection(private val context: Context) {
 
     private inner class ImageAvailableListener: ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader) {
             createStopCallback()  // instantly stop callbacks as avoiding over-produce 2 pictures
-            val onViewWidth = attribute().getViewWidth(true)
-            val onViewHeight = attribute().getViewWidth(false)
+            val onViewWidth = attribute.getViewWidth(true)
+            val onViewHeight = attribute.getViewWidth(false)
             val image: Image = reader.acquireNextImage()  // https://stackoverflow.com/a/38786747
             val planes: Array<Image.Plane> = image.planes
             val buffer: ByteBuffer = planes[0].buffer
             val bitmap = Bitmap.createBitmap(
-                attribute().getDisplayMetrics(),
+                attribute.getDisplayMetrics(),
                 onViewWidth,
                 onViewHeight,
                 Bitmap.Config.ARGB_8888,
@@ -71,9 +71,9 @@ class Projection(ctx: Context) {
 
     fun output(bitmap: Bitmap) {
         val fileDocument = if (PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
-            attribute().getFileResolver()
+            attribute.getFileResolver()
         } else {
-            attribute().getFileDocument()
+            attribute.getFileDocument()
         }
         context.defaultMediaStore.outputStream(fileDocument).use { fileOutputStream ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
@@ -85,9 +85,9 @@ class Projection(ctx: Context) {
     private fun mVirtualDisplay() {
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(
             "screenshot",
-            attribute().getViewWidth(true),
-            attribute().getViewWidth(false),
-            attribute().getDisplayMetrics().densityDpi,
+            attribute.getViewWidth(true),
+            attribute.getViewWidth(false),
+            attribute.getDisplayMetrics().densityDpi,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
             mImageReader.surface,
             null,
@@ -100,8 +100,8 @@ class Projection(ctx: Context) {
     private fun mImageReader() {
         mImageReader =
             ImageReader.newInstance(
-                attribute().getViewWidth(true),
-                attribute().getViewWidth(false),
+                attribute.getViewWidth(true),
+                attribute.getViewWidth(false),
                 PixelFormat.RGBA_8888,
                 1
             ).apply {
@@ -140,10 +140,7 @@ class Projection(ctx: Context) {
         if (ReceiveUtil.checkTileMode()) ScreenshotService.stop(context)
     }
 
-    private fun attribute(): Attribute = attribute
-    private val attribute: Attribute = Attribute.getInstance(ctx)
-
-    private val context: Context = ctx
+    private val attribute: Attribute = Attribute.getInstance(context)
 
     companion object {
         fun getInstance(ctx: Context): Projection {
