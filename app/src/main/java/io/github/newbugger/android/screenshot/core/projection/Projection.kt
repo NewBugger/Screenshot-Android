@@ -20,10 +20,10 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.widget.Toast
-import io.github.newbugger.android.storage.DefaultMediaStore.Companion.defaultMediaStore
 import io.github.newbugger.android.screenshot.service.ScreenshotService
 import io.github.newbugger.android.screenshot.util.ColorUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
+import io.github.newbugger.android.storage.mediastore.MediaStoreUtil.defaultMediaStoreOutputStream
 import java.nio.ByteBuffer
 
 
@@ -75,7 +75,7 @@ class Projection(private val context: Context) {
         } else {
             attribute.getFileDocument()
         }
-        context.defaultMediaStore.outputStream(fileDocument).use { fileOutputStream ->
+        context.defaultMediaStoreOutputStream(fileDocument).use { fileOutputStream ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
             fileOutputStream.flush()
             fileOutputStream.close()

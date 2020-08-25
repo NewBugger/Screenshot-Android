@@ -13,6 +13,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.preference.PreferenceManager
+import io.github.newbugger.android.storage.storageaccessframework.SAFUtil.preferencesPersistableUriGet
 
 
 object PreferenceUtil {
@@ -21,7 +22,7 @@ object PreferenceUtil {
         PreferenceManager.getDefaultSharedPreferences(context)
 
     fun checkDirectory(context: Context): Boolean =
-        preferences(context).getString("directory", null) != null
+        context.preferencesPersistableUriGet() == null
 
     fun putString(context: Context, id: String, value: String) {
         preferences(context).edit().putString(id, value).apply()

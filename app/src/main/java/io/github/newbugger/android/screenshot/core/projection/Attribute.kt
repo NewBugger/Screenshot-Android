@@ -16,9 +16,9 @@ import android.net.Uri
 import android.os.Build
 import android.util.DisplayMetrics
 import androidx.annotation.RequiresApi
-import androidx.documentfile.provider.DocumentFile
-import io.github.newbugger.android.storage.DefaultMediaStore.Companion.defaultMediaStore
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
+import io.github.newbugger.android.storage.mediastore.MediaStoreUtil
+import io.github.newbugger.android.storage.storageaccessframework.SAFUtil.preferencesPersistableUriGet
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -50,10 +50,10 @@ class Attribute(private val context: Context) {
                 context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, it)!!
             }*/
     fun getFileResolver(): Uri =
-        context.defaultMediaStore.Images().newFile("Screenshot", getFileName(), "image/png").uri
+        MediaStoreUtil.Images.newFile(context, "Screenshot", getFileName(), "image/png").uri
 
     fun getFileDocument(): Uri =
-        PreferenceUtil.getString(context, "directory", "null")
+        /*PreferenceUtil.getString(context, "directory", "null")
             .let {
                 Uri.parse(it)
             }
@@ -62,7 +62,8 @@ class Attribute(private val context: Context) {
             }
             .let {
                 it.createFile("image/png", getFileName())!!
-            }.uri
+            }.uri*/
+        context.preferencesPersistableUriGet(getFileName(), "image/png")
 
     private fun getFileName(): String {
         val fileDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).toString()
