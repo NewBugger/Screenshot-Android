@@ -12,21 +12,39 @@ package io.github.newbugger.android.screenshot.service
 import android.app.Activity
 import android.content.Intent
 import android.media.projection.MediaProjection
+import android.os.Build
 import android.os.Bundle
-import io.github.newbugger.android.screenshot.core.projection.Attribute
-import io.github.newbugger.android.screenshot.core.projection.ReceiveUtil
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import io.github.newbugger.android.screenshot.core.accessibility.ScreenshotAccessibilityService
+import io.github.newbugger.android.screenshot.core.choose.projection.Attribute
+import io.github.newbugger.android.screenshot.core.choose.projection.ReceiveUtil
 import io.github.newbugger.android.screenshot.util.BuildUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
 class ScreenshotActivity : Activity() {
 
     private fun screenshot() {
-        if (PreferenceUtil.getBoolean(this, "reflection", false)) {
-            ScreenshotService.startCapture(this)
-            finish()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            GlobalScope.launch(Dispatchers.Main) {
+                val delay = PreferenceUtil.getString(this@ScreenshotActivity, "delay", "3000").toLong()
+                kotlinx.coroutines.delay(delay)
+                Intent(ScreenshotAccessibilityService.const_takeScreenshot).also { intent ->
+                    intent.putExtra(ScreenshotAccessibilityService.const_action, ScreenshotAccessibilityService.const_takeScreenshot)
+                    localBroadcastManager.sendBroadcast(intent)
+                }
+                finish()
+            }
         } else {
-            mediaIntent()  // start Intent on only once
+            if (PreferenceUtil.getBoolean(this, "reflection", false)) {
+                ScreenshotService.startCapture(this)
+                finish()
+            } else {
+                mediaIntent()  // start Intent on only once
+            }
         }
     }
 
@@ -59,6 +77,8 @@ class ScreenshotActivity : Activity() {
         super.onCreate(savedInstanceState)
         screenshot()
     }
+
+    private val localBroadcastManager: LocalBroadcastManager by lazy { LocalBroadcastManager.getInstance(this) }
 
     private val attribute: Attribute by lazy { Attribute.getInstance(this) }
 

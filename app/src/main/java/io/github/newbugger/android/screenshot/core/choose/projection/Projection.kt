@@ -7,7 +7,7 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.core.projection
+package io.github.newbugger.android.screenshot.core.choose.projection
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -45,8 +45,6 @@ class Projection(private val context: Context) {
                 false
             )
             if (PreferenceUtil.getBoolean(context, "setPixel", true)) {
-                // TODO: find a method more efficient
-                // TODO: Android 11 provides a context.Screenshot() method
                 val pixelStride = planes[0].pixelStride
                 val rowStride = planes[0].rowStride
                 val rowPadding = rowStride - pixelStride * onViewWidth

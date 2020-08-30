@@ -7,7 +7,7 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.core.projection
+package io.github.newbugger.android.screenshot.core.choose.projection
 
 import android.content.Context
 import android.graphics.Point

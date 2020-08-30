@@ -12,7 +12,7 @@ package io.github.newbugger.android.screenshot.service
 import android.content.Context
 import android.content.Intent
 import android.service.quicksettings.TileService
-import io.github.newbugger.android.screenshot.core.projection.ReceiveUtil
+import io.github.newbugger.android.screenshot.core.choose.projection.ReceiveUtil
 
 
 class ScreenshotTileService: TileService() {

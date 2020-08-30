@@ -15,7 +15,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
-import io.github.newbugger.android.screenshot.core.Choose
+import io.github.newbugger.android.screenshot.core.choose.Choose
 import io.github.newbugger.android.screenshot.util.NotificationUtil
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import kotlinx.coroutines.Dispatchers

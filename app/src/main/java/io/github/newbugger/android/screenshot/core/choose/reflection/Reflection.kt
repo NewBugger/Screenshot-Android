@@ -7,7 +7,7 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.core.reflection
+package io.github.newbugger.android.screenshot.core.choose.reflection
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -15,8 +15,8 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.Build
 import android.view.Surface
-import io.github.newbugger.android.screenshot.core.projection.Attribute
-import io.github.newbugger.android.screenshot.core.projection.Projection
+import io.github.newbugger.android.screenshot.core.choose.projection.Attribute
+import io.github.newbugger.android.screenshot.core.choose.projection.Projection
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 import java.lang.reflect.Method
 

@@ -7,11 +7,11 @@
  * (at your option) any later version.
  */
 
-package io.github.newbugger.android.screenshot.core
+package io.github.newbugger.android.screenshot.core.choose
 
 import android.content.Context
-import io.github.newbugger.android.screenshot.core.projection.Projection
-import io.github.newbugger.android.screenshot.core.reflection.Reflection
+import io.github.newbugger.android.screenshot.core.choose.projection.Projection
+import io.github.newbugger.android.screenshot.core.choose.reflection.Reflection
 import io.github.newbugger.android.screenshot.util.PreferenceUtil
 
 
