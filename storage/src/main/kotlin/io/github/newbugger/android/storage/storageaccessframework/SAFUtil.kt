@@ -9,13 +9,11 @@
 
 package io.github.newbugger.android.storage.storageaccessframework
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
-import androidx.core.app.ActivityCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import java.io.FileNotFoundException
@@ -32,11 +30,10 @@ object SAFUtil {
         )
     }
 
-    fun Context.intentActionOpenDocumentTree(requestCode: Int) {
-        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also { intent ->
+    fun intentActionOpenDocumentTree(): Intent {
+        return Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also { intent ->
             intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Environment.DIRECTORY_PICTURES)
-            ActivityCompat.startActivityForResult(this as Activity, intent, requestCode, null)
         }
     }
 

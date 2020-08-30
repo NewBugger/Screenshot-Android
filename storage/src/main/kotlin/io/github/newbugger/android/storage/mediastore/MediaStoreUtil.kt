@@ -149,9 +149,6 @@ object MediaStoreUtil {
         return ContentValues(3).apply {
             put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
             put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
-            if (mimeType != null) {
-                put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-            }
         }.let {
             // before Android 11, MediaStore can not rename new file when file exists,
             // insert will return null. use newFile() instead.

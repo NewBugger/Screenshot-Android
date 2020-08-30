@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         if (!PreferenceUtil.checkSdkVersion(Build.VERSION_CODES.Q)) {
             if (PreferenceUtil.checkDirectory(this)) {
                 Toast.makeText(this, "Storage Access requesting..", Toast.LENGTH_LONG).show()
-                this.intentActionOpenDocumentTree(BuildUtil.Constant.Code.documentRequestCode)
+                startActivityForResult(intentActionOpenDocumentTree(), BuildUtil.Constant.Code.documentRequestCode)
             } else {
                 Toast.makeText(this, "Storage Access requested.", Toast.LENGTH_LONG).show()
             }
